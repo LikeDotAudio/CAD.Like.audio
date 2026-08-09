@@ -34,131 +34,132 @@ function getGridLevels(gridSize: number, zoom: number, minPx = 8) {
 
 /** Background, grid lines/dots (minor, major 10x, super 100x), and world axes. */
 export function drawGrid({ ctx, view, gridSize, gridMode = 'lines' }: Scene): void {
-  const { width: W, height: H } = view;
-  ctx.clearRect(0, 0, W, H);
+  const { width: canvasWidth, height: canvasHeight } = view;
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   ctx.fillStyle = CANVAS.background;
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
   const levels = getGridLevels(gridSize, view.zoom, 8);
 
   // Convert screen boundaries to world coordinates
-  const minWorld = view.toWorld(0, H);
-  const maxWorld = view.toWorld(W, 0);
+  const minWorldPoint = view.toWorld(0, canvasHeight);
+  const maxWorldPoint = view.toWorld(canvasWidth, 0);
 
-  const leftW = Math.min(minWorld.x, maxWorld.x);
-  const rightW = Math.max(minWorld.x, maxWorld.x);
-  const bottomW = Math.min(minWorld.y, maxWorld.y);
-  const topW = Math.max(minWorld.y, maxWorld.y);
+  const worldLeft = Math.min(minWorldPoint.x, maxWorldPoint.x);
+  const worldRight = Math.max(minWorldPoint.x, maxWorldPoint.x);
+  const worldBottom = Math.min(minWorldPoint.y, maxWorldPoint.y);
+  const worldTop = Math.max(minWorldPoint.y, maxWorldPoint.y);
 
   if (gridMode === 'dots') {
     // DOTS MODE: Draw dots at minor, major, and super grid intersections
-    const stepW = levels.minorWorld;
-    const startX = Math.floor(leftW / stepW) * stepW;
-    const endX = Math.ceil(rightW / stepW) * stepW;
-    const startY = Math.floor(bottomW / stepW) * stepW;
-    const endY = Math.ceil(topW / stepW) * stepW;
+    const stepWorld = levels.minorWorld;
+    const startWorldX = Math.floor(worldLeft / stepWorld) * stepWorld;
+    const endWorldX = Math.ceil(worldRight / stepWorld) * stepWorld;
+    const startWorldY = Math.floor(worldBottom / stepWorld) * stepWorld;
+    const endWorldY = Math.ceil(worldTop / stepWorld) * stepWorld;
 
-    const eps = stepW * 0.001;
+    for (let worldX = startWorldX; worldX <= endWorldX + stepWorld * 0.5; worldX += stepWorld) {
+      const indexX = Math.round(worldX / stepWorld);
+      const isMajorX = indexX % 10 === 0;
+      const isSuperX = indexX % 100 === 0;
+      const screenX = (worldX - view.panX) * view.zoom + canvasWidth / 2;
 
-    for (let wx = startX; wx <= endX; wx += stepW) {
-      const isSuperX = Math.abs(wx % levels.superWorld) < eps || Math.abs((wx % levels.superWorld) - levels.superWorld) < eps;
-      const isMajorX = Math.abs(wx % levels.majorWorld) < eps || Math.abs((wx % levels.majorWorld) - levels.majorWorld) < eps;
-      const screenX = (wx - view.panX) * view.zoom + W / 2;
-
-      for (let wy = startY; wy <= endY; wy += stepW) {
-        const isSuperY = Math.abs(wy % levels.superWorld) < eps || Math.abs((wy % levels.superWorld) - levels.superWorld) < eps;
-        const isMajorY = Math.abs(wy % levels.majorWorld) < eps || Math.abs((wy % levels.majorWorld) - levels.majorWorld) < eps;
-        const screenY = H / 2 - (wy - view.panY) * view.zoom;
+      for (let worldY = startWorldY; worldY <= endWorldY + stepWorld * 0.5; worldY += stepWorld) {
+        const indexY = Math.round(worldY / stepWorld);
+        const isMajorY = indexY % 10 === 0;
+        const isSuperY = indexY % 100 === 0;
+        const screenY = canvasHeight / 2 - (worldY - view.panY) * view.zoom;
 
         const isSuper = isSuperX && isSuperY;
         const isMajor = isMajorX && isMajorY;
 
-        let radius = 1;
-        let color: string = CANVAS.grid;
+        let dotRadius = 1;
+        let dotColor: string = CANVAS.grid;
 
         if (isSuper) {
-          radius = 2.5;
-          color = 'rgba(255, 255, 255, 0.45)';
+          dotRadius = 2.5;
+          dotColor = 'rgba(255, 255, 255, 0.45)';
         } else if (isMajor) {
-          radius = 1.8;
-          color = 'rgba(255, 255, 255, 0.3)';
+          dotRadius = 1.8;
+          dotColor = 'rgba(255, 255, 255, 0.3)';
         } else {
-          radius = 1.0;
-          color = CANVAS.grid;
+          dotRadius = 1.0;
+          dotColor = CANVAS.grid;
         }
 
-        ctx.fillStyle = color;
-        ctx.fillRect(screenX - radius / 2, screenY - radius / 2, radius, radius);
+        ctx.fillStyle = dotColor;
+        ctx.fillRect(screenX - dotRadius / 2, screenY - dotRadius / 2, dotRadius, dotRadius);
       }
     }
   } else {
     // LINES MODE: Draw Minor, Major (10x), and Super (100x) grid lines
-    const epsMinor = levels.minorWorld * 0.001;
-    const epsMajor = levels.majorWorld * 0.001;
+    const stepWorld = levels.minorWorld;
 
-    // 1. Minor lines
+    // 1. Minor lines (excluding major & super)
     ctx.strokeStyle = CANVAS.grid;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    const startXMinor = Math.floor(leftW / levels.minorWorld) * levels.minorWorld;
-    for (let wx = startXMinor; wx <= rightW; wx += levels.minorWorld) {
-      const isMajor = Math.abs(wx % levels.majorWorld) < epsMinor || Math.abs((wx % levels.majorWorld) - levels.majorWorld) < epsMinor;
-      if (!isMajor) {
-        const sx = (wx - view.panX) * view.zoom + W / 2;
-        ctx.moveTo(sx, 0);
-        ctx.lineTo(sx, H);
+    const startXMinor = Math.floor(worldLeft / stepWorld) * stepWorld;
+    for (let worldX = startXMinor; worldX <= worldRight + stepWorld * 0.5; worldX += stepWorld) {
+      const indexX = Math.round(worldX / stepWorld);
+      if (indexX % 10 !== 0) {
+        const screenX = (worldX - view.panX) * view.zoom + canvasWidth / 2;
+        ctx.moveTo(screenX, 0);
+        ctx.lineTo(screenX, canvasHeight);
       }
     }
-    const startYMinor = Math.floor(bottomW / levels.minorWorld) * levels.minorWorld;
-    for (let wy = startYMinor; wy <= topW; wy += levels.minorWorld) {
-      const isMajor = Math.abs(wy % levels.majorWorld) < epsMinor || Math.abs((wy % levels.majorWorld) - levels.majorWorld) < epsMinor;
-      if (!isMajor) {
-        const sy = H / 2 - (wy - view.panY) * view.zoom;
-        ctx.moveTo(0, sy);
-        ctx.lineTo(W, sy);
+    const startYMinor = Math.floor(worldBottom / stepWorld) * stepWorld;
+    for (let worldY = startYMinor; worldY <= worldTop + stepWorld * 0.5; worldY += stepWorld) {
+      const indexY = Math.round(worldY / stepWorld);
+      if (indexY % 10 !== 0) {
+        const screenY = canvasHeight / 2 - (worldY - view.panY) * view.zoom;
+        ctx.moveTo(0, screenY);
+        ctx.lineTo(canvasWidth, screenY);
       }
     }
     ctx.stroke();
 
-    // 2. Major lines (every 10x minor)
+    // 2. Major lines (every 10x minor, excluding super)
+    const majorStepWorld = levels.majorWorld;
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    const startXMajor = Math.floor(leftW / levels.majorWorld) * levels.majorWorld;
-    for (let wx = startXMajor; wx <= rightW; wx += levels.majorWorld) {
-      const isSuper = Math.abs(wx % levels.superWorld) < epsMajor || Math.abs((wx % levels.superWorld) - levels.superWorld) < epsMajor;
-      if (!isSuper) {
-        const sx = (wx - view.panX) * view.zoom + W / 2;
-        ctx.moveTo(sx, 0);
-        ctx.lineTo(sx, H);
+    const startXMajor = Math.floor(worldLeft / majorStepWorld) * majorStepWorld;
+    for (let worldX = startXMajor; worldX <= worldRight + majorStepWorld * 0.5; worldX += majorStepWorld) {
+      const indexX = Math.round(worldX / majorStepWorld);
+      if (indexX % 10 !== 0) {
+        const screenX = (worldX - view.panX) * view.zoom + canvasWidth / 2;
+        ctx.moveTo(screenX, 0);
+        ctx.lineTo(screenX, canvasHeight);
       }
     }
-    const startYMajor = Math.floor(bottomW / levels.majorWorld) * levels.majorWorld;
-    for (let wy = startYMajor; wy <= topW; wy += levels.majorWorld) {
-      const isSuper = Math.abs(wy % levels.superWorld) < epsMajor || Math.abs((wy % levels.superWorld) - levels.superWorld) < epsMajor;
-      if (!isSuper) {
-        const sy = H / 2 - (wy - view.panY) * view.zoom;
-        ctx.moveTo(0, sy);
-        ctx.lineTo(W, sy);
+    const startYMajor = Math.floor(worldBottom / majorStepWorld) * majorStepWorld;
+    for (let worldY = startYMajor; worldY <= worldTop + majorStepWorld * 0.5; worldY += majorStepWorld) {
+      const indexY = Math.round(worldY / majorStepWorld);
+      if (indexY % 10 !== 0) {
+        const screenY = canvasHeight / 2 - (worldY - view.panY) * view.zoom;
+        ctx.moveTo(0, screenY);
+        ctx.lineTo(canvasWidth, screenY);
       }
     }
     ctx.stroke();
 
     // 3. Super lines (every 100x minor)
+    const superStepWorld = levels.superWorld;
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
     ctx.lineWidth = 1.2;
     ctx.beginPath();
-    const startXSuper = Math.floor(leftW / levels.superWorld) * levels.superWorld;
-    for (let wx = startXSuper; wx <= rightW; wx += levels.superWorld) {
-      const sx = (wx - view.panX) * view.zoom + W / 2;
-      ctx.moveTo(sx, 0);
-      ctx.lineTo(sx, H);
+    const startXSuper = Math.floor(worldLeft / superStepWorld) * superStepWorld;
+    for (let worldX = startXSuper; worldX <= worldRight + superStepWorld * 0.5; worldX += superStepWorld) {
+      const screenX = (worldX - view.panX) * view.zoom + canvasWidth / 2;
+      ctx.moveTo(screenX, 0);
+      ctx.lineTo(screenX, canvasHeight);
     }
-    const startYSuper = Math.floor(bottomW / levels.superWorld) * levels.superWorld;
-    for (let wy = startYSuper; wy <= topW; wy += levels.superWorld) {
-      const sy = H / 2 - (wy - view.panY) * view.zoom;
-      ctx.moveTo(0, sy);
-      ctx.lineTo(W, sy);
+    const startYSuper = Math.floor(worldBottom / superStepWorld) * superStepWorld;
+    for (let worldY = startYSuper; worldY <= worldTop + superStepWorld * 0.5; worldY += superStepWorld) {
+      const screenY = canvasHeight / 2 - (worldY - view.panY) * view.zoom;
+      ctx.moveTo(0, screenY);
+      ctx.lineTo(canvasWidth, screenY);
     }
     ctx.stroke();
   }
@@ -169,10 +170,10 @@ export function drawGrid({ ctx, view, gridSize, gridMode = 'lines' }: Scene): vo
   const origin = view.toScreen(0, 0);
   ctx.beginPath();
   ctx.moveTo(origin.x, 0);
-  ctx.lineTo(origin.x, H);
+  ctx.lineTo(origin.x, canvasHeight);
   ctx.stroke();
   ctx.beginPath();
   ctx.moveTo(0, origin.y);
-  ctx.lineTo(W, origin.y);
+  ctx.lineTo(canvasWidth, origin.y);
   ctx.stroke();
 }

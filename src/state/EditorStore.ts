@@ -409,7 +409,16 @@ export class EditorStore {
     };
     const onKeyDown = (e: KeyboardEvent) => this.handleKeyDown(e);
     const onKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'Space') this.spaceDown = false;
+      if (e.code === 'Space') {
+        this.spaceDown = false;
+        if (!this.panning) this.setCursor(this.tool.cursor);
+      }
+    };
+    const onBlur = () => {
+      this.spaceDown = false;
+      this.panning = false;
+      this.imageDrag = null;
+      this.setCursor(this.tool.cursor);
     };
 
     canvas.addEventListener('mousemove', onMove);
@@ -420,6 +429,7 @@ export class EditorStore {
     window.addEventListener('mouseup', onUp);
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
 
     return () => {
       canvas.removeEventListener('mousemove', onMove);
@@ -430,6 +440,7 @@ export class EditorStore {
       window.removeEventListener('mouseup', onUp);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
       if (this.frameHandle) cancelAnimationFrame(this.frameHandle);
       this.frameHandle = 0;
       this.canvas = null;
@@ -562,6 +573,7 @@ export class EditorStore {
   private handlePointerUp(e: MouseEvent): void {
     if (this.imageDrag) {
       this.imageDrag = null;
+      this.setCursor(this.tool.cursor);
       this.emit();
     }
     if (this.panning) {
@@ -601,10 +613,18 @@ export class EditorStore {
         this.cancelCalibration();
         return;
       }
+
+      const isDrawing = this.tool.isDrawing?.(this.toolState);
       this.tool.onEscape?.(this.toolState, this.api);
       this.closeDynInput();
-      this.requestDraw();
-      this.emit();
+
+      // If the tool wasn't mid-drawing or if it's already idle, switch back to the Select tool ('select')
+      if (!isDrawing && this.toolId !== 'select') {
+        this.setTool('select');
+      } else {
+        this.requestDraw();
+        this.emit();
+      }
       return;
     }
 

@@ -53,7 +53,7 @@ export function SidebarPanel() {
           </div>
         </div>
 
-        {/* Action Toolbar Icons (QCAD style) */}
+        {/* Action Toolbar Icons */}
         <div className="flex items-center gap-1 px-2 py-1 bg-[#2a2a2a] border-b border-[#333]">
           <button
             type="button"

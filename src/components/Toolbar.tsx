@@ -401,7 +401,7 @@ export function Toolbar() {
             )}
           </div>
 
-          {/* Dimension Menu (QCAD Dimension types) */}
+          {/* Dimension Menu */}
           <div className="relative">
             <button
               type="button"

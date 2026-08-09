@@ -17,7 +17,7 @@ export default function App() {
         {/* Top CAD Header Bar */}
         <Toolbar />
 
-        {/* Main Work Area: Left Toolbar + Canvas + Right QCAD Sidebar */}
+        {/* Main Work Area: Left Toolbar + Canvas + Right Sidebar */}
         <div className="flex flex-1 overflow-hidden relative">
           <VerticalToolbar />
           <div className="flex flex-1 flex-col overflow-hidden relative">
