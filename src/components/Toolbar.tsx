@@ -11,7 +11,9 @@ export function Toolbar() {
   const fileRef = useRef<HTMLInputElement>(null);
   const dxfFileRef = useRef<HTMLInputElement>(null);
 
-  const [activeMenu, setActiveMenu] = useState<'file' | 'edit' | 'drawing' | null>(null);
+  const [activeMenu, setActiveMenu] = useState<'file' | 'edit' | 'modify' | 'drawing' | null>(
+    null,
+  );
   const [recentFiles, setRecentFiles] = useState<RecentFileEntry[]>([]);
   const [showRecentSubmenu, setShowRecentSubmenu] = useState(false);
   const [pendingDxfImport, setPendingDxfImport] = useState<{
@@ -275,6 +277,125 @@ export function Toolbar() {
                   className="flex items-center gap-2 px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
                 >
                   <span>✕</span> Clear Canvas
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Modify Menu (QCAD Modify behaviors) */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setActiveMenu(activeMenu === 'modify' ? null : 'modify')}
+              className={
+                'px-2.5 py-1 rounded text-[12px] font-medium transition-colors ' +
+                (activeMenu === 'modify' ? 'bg-[#094771] text-white' : 'hover:bg-[#333] text-[#ddd]')
+              }
+            >
+              Modify ▾
+            </button>
+            {activeMenu === 'modify' && (
+              <div className="absolute left-0 top-7 z-50 w-56 rounded border border-[#454545] bg-[#252526] p-1 shadow-xl flex flex-col gap-0.5 max-h-96 overflow-y-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.setTool('select');
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>↔️</span> Move / Copy</span>
+                  <span className="text-[10px] font-mono text-[#888]">MV</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.rotateSelectionPrompt();
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>🔄</span> Rotate...</span>
+                  <span className="text-[10px] font-mono text-[#888]">RO</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.scaleSelectionPrompt();
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>📐</span> Scale...</span>
+                  <span className="text-[10px] font-mono text-[#888]">SZ</span>
+                </button>
+
+                <div className="my-0.5 border-t border-[#3c3c3c]" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.flipHorizontalSelection();
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>↔️</span> Flip Horizontal</span>
+                  <span className="text-[10px] font-mono text-[#888]">FH</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.flipVerticalSelection();
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>↕️</span> Flip Vertical</span>
+                  <span className="text-[10px] font-mono text-[#888]">FV</span>
+                </button>
+
+                <div className="my-0.5 border-t border-[#3c3c3c]" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.setTool('parallel');
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>📏</span> Offset (Parallel)</span>
+                  <span className="text-[10px] font-mono text-[#888]">OF</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.setTool('break');
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>✂️</span> Trim / Break Segment</span>
+                  <span className="text-[10px] font-mono text-[#888]">RM</span>
+                </button>
+
+                <div className="my-0.5 border-t border-[#3c3c3c]" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.explodeSelection();
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>💥</span> Explode Groups</span>
+                  <span className="text-[10px] font-mono text-[#888]">XP</span>
                 </button>
               </div>
             )}

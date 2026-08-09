@@ -839,17 +839,97 @@ export class EditorStore {
     this.emit();
   }
 
-  clearAll(): void {
-    if (this.doc.isEmpty && !this.tool.isDrawing?.(this.toolState)) return;
+  rotateSelectionPrompt(): void {
+    if (this.selection.size === 0) {
+      this.showHint('Select elements to rotate first.', 3000);
+      return;
+    }
+    const degStr = window.prompt('Enter rotation angle in degrees (e.g. 45 or -90):', '45');
+    if (!degStr) return;
+    const deg = parseFloat(degStr);
+    if (isNaN(deg)) return;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const id of this.selection) {
+      const e = this.doc.edge(id);
+      if (!e) continue;
+      const [a, b] = this.doc.endpointsOf(e);
+      minX = Math.min(minX, a.x, b.x);
+      minY = Math.min(minY, a.y, b.y);
+      maxX = Math.max(maxX, a.x, b.x);
+      maxY = Math.max(maxY, a.y, b.y);
+    }
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    const rad = (deg * Math.PI) / 180;
+
     this.history.push(this.doc.snapshot());
-    this.doc.clear();
-    this.selection.clear();
-    this.hoverId = null;
-    this.toolState = this.tool.createState();
-    this.closeDynInput();
+    this.doc.rotateEdges(this.selection, cx, cy, rad);
     this.markDocChanged();
     this.requestDraw();
     this.emit();
+    this.showHint(`Rotated ${this.selection.size} element(s) by ${deg}°.`, 3000);
+  }
+
+  scaleSelectionPrompt(): void {
+    if (this.selection.size === 0) {
+      this.showHint('Select elements to scale first.', 3000);
+      return;
+    }
+    const scaleStr = window.prompt('Enter scale factor (e.g. 2.0 to double, 0.5 to halve):', '2.0');
+    if (!scaleStr) return;
+    const factor = parseFloat(scaleStr);
+    if (isNaN(factor) || factor <= 0) return;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const id of this.selection) {
+      const e = this.doc.edge(id);
+      if (!e) continue;
+      const [a, b] = this.doc.endpointsOf(e);
+      minX = Math.min(minX, a.x, b.x);
+      minY = Math.min(minY, a.y, b.y);
+      maxX = Math.max(maxX, a.x, b.x);
+      maxY = Math.max(maxY, a.y, b.y);
+    }
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+
+    this.history.push(this.doc.snapshot());
+    this.doc.scaleEdges(this.selection, cx, cy, factor);
+    this.markDocChanged();
+    this.requestDraw();
+    this.emit();
+    this.showHint(`Scaled ${this.selection.size} element(s) by ${factor}x.`, 3000);
+  }
+
+  flipHorizontalSelection(): void {
+    if (this.selection.size === 0) return;
+    this.history.push(this.doc.snapshot());
+    this.doc.flipHorizontal(this.selection);
+    this.markDocChanged();
+    this.requestDraw();
+    this.emit();
+    this.showHint(`Flipped ${this.selection.size} element(s) horizontally.`, 3000);
+  }
+
+  flipVerticalSelection(): void {
+    if (this.selection.size === 0) return;
+    this.history.push(this.doc.snapshot());
+    this.doc.flipVertical(this.selection);
+    this.markDocChanged();
+    this.requestDraw();
+    this.emit();
+    this.showHint(`Flipped ${this.selection.size} element(s) vertically.`, 3000);
+  }
+
+  explodeSelection(): void {
+    if (this.selection.size === 0) return;
+    this.history.push(this.doc.snapshot());
+    const count = this.doc.explodeSelected(this.selection);
+    this.markDocChanged();
+    this.requestDraw();
+    this.emit();
+    this.showHint(`Exploded ${count} element group(s).`, 3000);
   }
 
   async exportDxf(): Promise<void> {

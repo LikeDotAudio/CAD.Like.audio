@@ -146,6 +146,18 @@ export class Doc {
     return id;
   }
 
+  addLine(p1: Point, p2: Point, groupId = 0, layerId = '0'): number | null {
+    const v1 = this.addVertex(p1.x, p1.y);
+    const v2 = this.addVertex(p2.x, p2.y);
+    return this.addLineEdge(v1, v2, groupId, layerId);
+  }
+
+  addArc(cx: number, cy: number, r: number, p1: Point, p2: Point, groupId = 0, layerId = '0'): number | null {
+    const v1 = this.addVertex(p1.x, p1.y);
+    const v2 = this.addVertex(p2.x, p2.y);
+    return this.addArcEdge(v1, v2, cx, cy, r, groupId, layerId);
+  }
+
   removeEdge(id: number): void {
     const e = this.edges.get(id);
     if (!e) return;
@@ -440,6 +452,152 @@ export class Doc {
 
     this.resolveAllIntersections();
     return true;
+  }
+
+  scaleEdges(edgeIds: Iterable<number>, cx: number, cy: number, scaleFactor: number): boolean {
+    if (scaleFactor <= 0) return false;
+    const edgeSet = new Set(edgeIds);
+    if (edgeSet.size === 0) return false;
+    const affectedVertices = new Set<number>();
+
+    for (const id of edgeSet) {
+      const e = this.edges.get(id);
+      if (!e) continue;
+      affectedVertices.add(e.v1);
+      affectedVertices.add(e.v2);
+      if (e.groupId) this.groupIntact.delete(e.groupId);
+    }
+
+    for (const vId of affectedVertices) {
+      const v = this.vertices.get(vId);
+      if (v) {
+        v.x = cx + (v.x - cx) * scaleFactor;
+        v.y = cy + (v.y - cy) * scaleFactor;
+      }
+    }
+
+    for (const id of edgeSet) {
+      const e = this.edges.get(id);
+      if (e && e.type === 'arc') {
+        e.cx = cx + (e.cx - cx) * scaleFactor;
+        e.cy = cy + (e.cy - cy) * scaleFactor;
+        e.r *= scaleFactor;
+      }
+    }
+
+    this.resolveAllIntersections();
+    return true;
+  }
+
+  flipHorizontal(edgeIds: Iterable<number>): boolean {
+    const edgeSet = new Set(edgeIds);
+    if (edgeSet.size === 0) return false;
+    let minX = Infinity, maxX = -Infinity;
+
+    for (const id of edgeSet) {
+      const e = this.edges.get(id);
+      if (!e) continue;
+      const [a, b] = this.endpointsOf(e);
+      minX = Math.min(minX, a.x, b.x);
+      maxX = Math.max(maxX, a.x, b.x);
+    }
+    const cx = (minX + maxX) / 2;
+
+    const affectedVertices = new Set<number>();
+    for (const id of edgeSet) {
+      const e = this.edges.get(id);
+      if (!e) continue;
+      affectedVertices.add(e.v1);
+      affectedVertices.add(e.v2);
+      if (e.groupId) this.groupIntact.delete(e.groupId);
+    }
+
+    for (const vId of affectedVertices) {
+      const v = this.vertices.get(vId);
+      if (v) v.x = cx - (v.x - cx);
+    }
+
+    for (const id of edgeSet) {
+      const e = this.edges.get(id);
+      if (e && e.type === 'arc') e.cx = cx - (e.cx - cx);
+    }
+
+    this.resolveAllIntersections();
+    return true;
+  }
+
+  flipVertical(edgeIds: Iterable<number>): boolean {
+    const edgeSet = new Set(edgeIds);
+    if (edgeSet.size === 0) return false;
+    let minY = Infinity, maxY = -Infinity;
+
+    for (const id of edgeSet) {
+      const e = this.edges.get(id);
+      if (!e) continue;
+      const [a, b] = this.endpointsOf(e);
+      minY = Math.min(minY, a.y, b.y);
+      maxY = Math.max(maxY, a.y, b.y);
+    }
+    const cy = (minY + maxY) / 2;
+
+    const affectedVertices = new Set<number>();
+    for (const id of edgeSet) {
+      const e = this.edges.get(id);
+      if (!e) continue;
+      affectedVertices.add(e.v1);
+      affectedVertices.add(e.v2);
+      if (e.groupId) this.groupIntact.delete(e.groupId);
+    }
+
+    for (const vId of affectedVertices) {
+      const v = this.vertices.get(vId);
+      if (v) v.y = cy - (v.y - cy);
+    }
+
+    for (const id of edgeSet) {
+      const e = this.edges.get(id);
+      if (e && e.type === 'arc') e.cy = cy - (e.cy - cy);
+    }
+
+    this.resolveAllIntersections();
+    return true;
+  }
+
+  divideEdge(edgeId: number, px: number, py: number): number | null {
+    const e = this.edges.get(edgeId);
+    if (!e) return null;
+    const [a, b] = this.endpointsOf(e);
+    const layerId = e.layerId;
+
+    if (e.type === 'line') {
+      const d = distToSegment(px, py, a.x, a.y, b.x, b.y);
+      const splitPt = { x: a.x + d * (b.x - a.x), y: a.y + d * (b.y - a.y) };
+      this.removeEdge(edgeId);
+      const e1 = this.addLine(a, splitPt, 0, layerId);
+      this.addLine(splitPt, b, 0, layerId);
+      return e1;
+    } else if (e.type === 'arc') {
+      const angle = Math.atan2(py - e.cy, px - e.cx);
+      const splitPt = { x: e.cx + e.r * Math.cos(angle), y: e.cy + e.r * Math.sin(angle) };
+      this.removeEdge(edgeId);
+      const e1 = this.addArc(e.cx, e.cy, e.r, a, splitPt, 0, layerId);
+      this.addArc(e.cx, e.cy, e.r, splitPt, b, 0, layerId);
+      return e1;
+    }
+    return null;
+  }
+
+  explodeSelected(edgeIds: Iterable<number>): number {
+    let count = 0;
+    for (const id of edgeIds) {
+      const e = this.edges.get(id);
+      if (e && e.groupId) {
+        this.groupIntact.delete(e.groupId);
+        e.groupId = 0;
+        count++;
+      }
+    }
+    return count;
   }
 
   /** Multiply every coordinate by `f` (unit switches and scale calibration). */

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { STANDARD_DXF_COLORS } from '../core/dxfColors';
 import { useStore, useUi } from '../state/useEditor';
+import { LayerContextMenu } from './LayerContextMenu';
+import type { Layer } from '../core/types';
 
 export function LayersPanel() {
   const store = useStore();
@@ -10,6 +12,9 @@ export function LayersPanel() {
   const [showColorPicker, setShowColorPicker] = useState<string | null>(null);
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; layer: Layer } | null>(
+    null,
+  );
 
   const handleAddLayer = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,6 +90,10 @@ export function LayersPanel() {
                       ? 'bg-accent/10 border border-accent/30 text-ink font-medium'
                       : 'hover:bg-paper-2 border border-transparent text-ink-2')
                   }
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenu({ x: e.clientX, y: e.clientY, layer });
+                  }}
                 >
                   {/* Left: Active indicator + Visibility toggle */}
                   <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -193,6 +202,26 @@ export function LayersPanel() {
             </select>
           </div>
         </>
+      )}
+
+      {/* Layer Right-Click Context Menu */}
+      {contextMenu && (
+        <LayerContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          targetLayer={contextMenu.layer}
+          onClose={() => setContextMenu(null)}
+          onEditLayer={(layer) => {
+            setEditingLayerId(layer.id);
+            setEditingName(layer.name);
+          }}
+          onAddLayerPrompt={() => {
+            const name = window.prompt('Enter new layer name:');
+            if (name && name.trim()) {
+              store.addLayer(name.trim());
+            }
+          }}
+        />
       )}
     </div>
   );
