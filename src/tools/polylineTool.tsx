@@ -36,6 +36,9 @@ export const polylineTool: Tool<PolylineState> = {
   createState: () => ({ pts: [] }),
   isDrawing: (s) => s.pts.length > 0,
   orthoRef: (s) => s.pts[s.pts.length - 1] ?? null,
+  scaleState: (s, f) => {
+    s.pts = s.pts.map((p) => ({ x: p.x * f, y: p.y * f }));
+  },
 
   onPointerDown(state, input, api) {
     if (state.pts.length >= 3 && distToFirst(state, api, input.screen) < CLOSE_LOOP_PX) {

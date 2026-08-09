@@ -28,6 +28,9 @@ export const lineTool: Tool<LineState> = {
   createState: () => ({ start: null }),
   isDrawing: (s) => s.start !== null,
   orthoRef: (s) => s.start,
+  scaleState: (s, f) => {
+    if (s.start) s.start = { x: s.start.x * f, y: s.start.y * f };
+  },
 
   onPointerDown(state, input, api) {
     if (!state.start) {

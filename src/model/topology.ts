@@ -121,7 +121,8 @@ export function cycleWalk(doc: Doc, component: Component): CycleWalk | null {
   for (;;) {
     const nbrs = index.get(curV);
     if (!nbrs || nbrs.length !== 2) return null;
-    const next = nbrs[0]!.id === prev ? nbrs[1]! : nbrs[0]!;
+    // Annotated to break the circular inference between `prev` and `next`.
+    const next: Edge = nbrs[0]!.id === prev ? nbrs[1]! : nbrs[0]!;
     edgeSeq.push(next.id);
     const nextV = next.v1 === curV ? next.v2 : next.v1;
     if (nextV === startV) break;

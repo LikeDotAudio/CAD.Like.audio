@@ -48,4 +48,21 @@ export class Viewport {
   pxToWorld(px: number): number {
     return px / this.zoom;
   }
+
+  zoomToFit(bbox: { x1: number; y1: number; x2: number; y2: number } | null): void {
+    if (!bbox || !this.width || !this.height) return;
+    const bw = bbox.x2 - bbox.x1;
+    const bh = bbox.y2 - bbox.y1;
+    if (bw <= 0 || bh <= 0) return;
+
+    const margin = 0.8;
+    const zx = (this.width * margin) / bw;
+    const zy = (this.height * margin) / bh;
+    this.zoom = clamp(Math.min(zx, zy), MIN_ZOOM, MAX_ZOOM);
+
+    const cx = (bbox.x1 + bbox.x2) / 2;
+    const cy = (bbox.y1 + bbox.y2) / 2;
+    this.panX = this.width / 2 - cx * this.zoom;
+    this.panY = this.height / 2 + cy * this.zoom;
+  }
 }

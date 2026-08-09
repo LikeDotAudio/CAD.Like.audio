@@ -45,6 +45,10 @@ export const measureTool: Tool<MeasureState> = {
   showsSnapIndicator: false,
 
   createState: () => ({ p1: null, p2: null }),
+  scaleState: (s, f) => {
+    if (s.p1) s.p1 = { x: s.p1.x * f, y: s.p1.y * f };
+    if (s.p2) s.p2 = { x: s.p2.x * f, y: s.p2.y * f };
+  },
 
   onPointerMove(state, input, api) {
     if (state.p1 && !state.p2) api.setMeasurement(`📏 ${readout(state.p1, input.world, api)}`);

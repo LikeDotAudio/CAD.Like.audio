@@ -2,6 +2,7 @@ import type { Point, ToolId, Units, ValidationResult } from '../core/types';
 import { calibrationFactor, idleCalibration, type CalibrationState } from '../image/calibration';
 import { isOverImage, type TracingImage } from '../image/TracingImage';
 import { saveDxf } from '../io/exportDxf';
+import { parseDxf, loadDxfIntoDoc } from '../io/importDxf';
 import { loadImageFile } from '../io/importImage';
 import { Doc } from '../model/Doc';
 import { History } from '../model/history';
@@ -613,6 +614,33 @@ export class EditorStore {
       return;
     }
     await saveDxf(this.doc, this.units);
+  }
+
+  async importDxf(file: File): Promise<void> {
+    const text = await file.text();
+    const result = parseDxf(text);
+    if (result.entities.length === 0) {
+      window.alert('No supported geometry (LINE, CIRCLE, ARC, LWPOLYLINE) found in DXF file.');
+      return;
+    }
+
+    this.history.push(this.doc.snapshot());
+
+    if (result.units && result.units !== this.units) {
+      this.setUnits(result.units);
+    }
+
+    loadDxfIntoDoc(this.doc, result);
+
+    this.selection.clear();
+    this.hoverId = null;
+    this.toolState = this.tool.createState();
+    this.closeDynInput();
+    this.view.zoomToFit(this.doc.bounds());
+    this.markDocChanged();
+    this.requestDraw();
+    this.emit();
+    this.showHint(`Opened DXF: imported ${result.entities.length} entities.`, 5000);
   }
 
   // ------------------------------------------------------------------- image

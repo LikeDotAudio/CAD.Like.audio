@@ -29,6 +29,9 @@ export const ellipseTool: Tool<EllipseState> = {
   createState: () => ({ centre: null }),
   isDrawing: (s) => s.centre !== null,
   orthoRef: (s) => s.centre,
+  scaleState: (s, f) => {
+    if (s.centre) s.centre = { x: s.centre.x * f, y: s.centre.y * f };
+  },
 
   onPointerDown(state, input, api) {
     if (!state.centre) {
