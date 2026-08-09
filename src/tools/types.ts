@@ -88,6 +88,11 @@ export interface Tool<S extends object = object> {
   isDrawing?(state: S): boolean;
   /** Reference point for Shift-constrained (ortho) movement, if the tool has one. */
   orthoRef?(state: S): Point | null;
+  /**
+   * Convert any in-progress coordinates when the drawing is rescaled (a unit
+   * switch), so a half-drawn shape survives the change.
+   */
+  scaleState?(state: S, factor: number): void;
 
   onPointerDown?(state: S, input: PointerInput, api: ToolApi): void;
   onPointerMove?(state: S, input: PointerInput, api: ToolApi): void;

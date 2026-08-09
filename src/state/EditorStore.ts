@@ -139,8 +139,6 @@ export class EditorStore {
         this.emit();
       },
     };
-    // `units` and `gridSize` are getters so tools always see live values.
-    const storeRef = this;
     this.uiSnapshot = this.buildUi();
     this.showHint(
       'True arcs: circles stay curved when cut · B = Break tool · Shift = ortho · Snap to endpoints/midpoints',
