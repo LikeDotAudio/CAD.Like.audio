@@ -1,4 +1,4 @@
-import type { ValidationResult } from '../core/types';
+import type { Layer, ValidationResult } from '../core/types';
 import type { CalibrationState } from '../image/calibration';
 import type { TracingImage } from '../image/TracingImage';
 import type { AnyTool } from '../tools/types';
@@ -20,6 +20,7 @@ export interface FrameState {
   tracing: TracingImage | null;
   calibration: CalibrationState;
   validation: ValidationResult;
+  layers?: ReadonlyMap<string, Layer>;
 }
 
 /** Paint one frame, back to front. */
@@ -33,6 +34,7 @@ export function renderScene(scene: Scene, frame: FrameState): void {
     selected: frame.selection,
     hoverId: frame.hoverId,
     hoverEnabled: frame.tool.id === 'select',
+    layers: frame.layers,
   });
   drawBadVertexMarkers(scene);
 

@@ -105,7 +105,7 @@ export class Doc {
 
   // ------------------------------------------------------------------- edges
 
-  addLineEdge(v1: number, v2: number, groupId: number): number | null {
+  addLineEdge(v1: number, v2: number, groupId: number, layerId = '0'): number | null {
     if (v1 === v2) return null;
     for (const e of this.edges.values()) {
       if (e.type === 'line' && ((e.v1 === v1 && e.v2 === v2) || (e.v1 === v2 && e.v2 === v1))) {
@@ -113,7 +113,7 @@ export class Doc {
       }
     }
     const id = this.nextEdgeId++;
-    const edge: LineEdge = { id, v1, v2, groupId, type: 'line' };
+    const edge: LineEdge = { id, v1, v2, groupId, layerId, type: 'line' };
     this.edges.set(id, edge);
     return id;
   }
@@ -125,6 +125,7 @@ export class Doc {
     cy: number,
     r: number,
     groupId: number,
+    layerId = '0',
   ): number | null {
     if (v1 === v2) return null;
     for (const e of this.edges.values()) {
@@ -140,7 +141,7 @@ export class Doc {
       }
     }
     const id = this.nextEdgeId++;
-    const edge: ArcEdge = { id, v1, v2, groupId, type: 'arc', cx, cy, r };
+    const edge: ArcEdge = { id, v1, v2, groupId, layerId, type: 'arc', cx, cy, r };
     this.edges.set(id, edge);
     return id;
   }
@@ -239,7 +240,7 @@ export class Doc {
       const from = vIds[i]!;
       const to = vIds[i + 1]!;
       if (from !== to) {
-        const n = this.addLineEdge(from, to, e.groupId);
+        const n = this.addLineEdge(from, to, e.groupId, e.layerId);
         if (n) out.push(n);
       }
     }
@@ -266,7 +267,7 @@ export class Doc {
       const from = vIds[i]!;
       const to = vIds[i + 1]!;
       if (from !== to) {
-        const n = this.addArcEdge(from, to, e.cx, e.cy, e.r, e.groupId);
+        const n = this.addArcEdge(from, to, e.cx, e.cy, e.r, e.groupId, e.layerId);
         if (n) out.push(n);
       }
     }

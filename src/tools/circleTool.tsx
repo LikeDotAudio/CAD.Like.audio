@@ -44,7 +44,7 @@ export const circleTool: Tool<CircleState> = {
     const r = Math.hypot(input.world.x - centre.x, input.world.y - centre.y);
     state.centre = null;
     api.closeDynInput();
-    api.edit(() => commitCircle(api.doc, centre.x, centre.y, r));
+    api.edit(() => commitCircle(api.doc, centre.x, centre.y, r, api.activeLayerId));
   },
 
   onDoubleClick(state, _input, api) {
@@ -115,7 +115,7 @@ export const circleTool: Tool<CircleState> = {
       const r = Math.hypot(point.x - centre.x, point.y - centre.y);
       state.centre = null;
       api.closeDynInput();
-      api.edit(() => commitCircle(api.doc, centre.x, centre.y, r));
+      api.edit(() => commitCircle(api.doc, centre.x, centre.y, r, api.activeLayerId));
     },
   },
 };

@@ -44,7 +44,7 @@ export const polylineTool: Tool<PolylineState> = {
     if (state.pts.length >= 3 && distToFirst(state, api, input.screen) < CLOSE_LOOP_PX) {
       const pts = state.pts;
       state.pts = [];
-      api.edit(() => commitPolyline(api.doc, pts, true));
+      api.edit(() => commitPolyline(api.doc, pts, true, api.activeLayerId));
       api.showHint('Shape closed.', 3000);
       return;
     }
@@ -56,7 +56,7 @@ export const polylineTool: Tool<PolylineState> = {
     if (state.pts.length < 2) return;
     const pts = state.pts;
     state.pts = [];
-    api.edit(() => commitPolyline(api.doc, pts, false));
+    api.edit(() => commitPolyline(api.doc, pts, false, api.activeLayerId));
   },
 
   onEscape(state, api) {

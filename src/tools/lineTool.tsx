@@ -41,7 +41,7 @@ export const lineTool: Tool<LineState> = {
     const from = state.start;
     state.start = null;
     api.closeDynInput();
-    api.edit(() => commitLine(api.doc, from.x, from.y, input.world.x, input.world.y));
+    api.edit(() => commitLine(api.doc, from.x, from.y, input.world.x, input.world.y, api.activeLayerId));
   },
 
   onDoubleClick(state, _input, api) {
@@ -128,7 +128,7 @@ export const lineTool: Tool<LineState> = {
       if (!from) return;
       state.start = null;
       api.closeDynInput();
-      api.edit(() => commitLine(api.doc, from.x, from.y, point.x, point.y));
+      api.edit(() => commitLine(api.doc, from.x, from.y, point.x, point.y, api.activeLayerId));
     },
   },
 };

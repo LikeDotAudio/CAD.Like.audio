@@ -1,5 +1,4 @@
 import type { Doc } from '../model/Doc';
-import { commitCircle } from '../model/commits';
 
 export interface DxfEntity {
   type: string;
@@ -21,20 +20,29 @@ export interface DxfEntity {
   isClosed?: boolean;
 }
 
+export interface DxfLayer {
+  name: string;
+  colorIndex?: number;
+  isFrozen?: boolean;
+}
+
 export interface DxfParseResult {
   units?: 'in' | 'mm';
+  layers: DxfLayer[];
   entities: DxfEntity[];
 }
 
 /**
- * Parses ASCII DXF string content into structured entities.
+ * Parses ASCII DXF string content into structured entities and layers.
  */
 export function parseDxf(dxfText: string): DxfParseResult {
   const lines = dxfText.split(/\r?\n/);
   let insunits: number | null = null;
+  const layers: DxfLayer[] = [];
   const entities: DxfEntity[] = [];
 
   let inHeader = false;
+  let inTables = false;
   let inEntities = false;
   let currentHeaderVar = '';
 
@@ -61,18 +69,26 @@ export function parseDxf(dxfText: string): DxfParseResult {
         if (next && next.code === 2) {
           if (next.value === 'HEADER') {
             inHeader = true;
+            inTables = false;
+            inEntities = false;
+          } else if (next.value === 'TABLES') {
+            inHeader = false;
+            inTables = true;
             inEntities = false;
           } else if (next.value === 'ENTITIES') {
             inHeader = false;
+            inTables = false;
             inEntities = true;
           } else {
             inHeader = false;
+            inTables = false;
             inEntities = false;
           }
         }
         continue;
       } else if (value === 'ENDSEC') {
         inHeader = false;
+        inTables = false;
         inEntities = false;
         continue;
       }
@@ -83,6 +99,14 @@ export function parseDxf(dxfText: string): DxfParseResult {
         currentHeaderVar = value;
       } else if (code === 70 && currentHeaderVar === '$INSUNITS') {
         insunits = parseInt(value, 10);
+      }
+    } else if (inTables) {
+      if (code === 0 && value.toUpperCase() === 'LAYER') {
+        const { layer, lastPair } = parseLayer(() => readPair());
+        if (layer) layers.push(layer);
+        if (lastPair && lastPair.code === 0) {
+          idx -= 2;
+        }
       }
     } else if (inEntities) {
       if (code === 0) {
@@ -105,7 +129,32 @@ export function parseDxf(dxfText: string): DxfParseResult {
   if (insunits === 1 || insunits === 2) units = 'in'; // 1 = Inches, 2 = Feet
   else if (insunits === 4 || insunits === 5 || insunits === 6) units = 'mm'; // 4 = mm, 5 = cm, 6 = m
 
-  return { units, entities };
+  return { units, layers, entities };
+}
+
+function parseLayer(
+  getNextPair: () => { code: number; value: string } | null,
+): { layer: DxfLayer | null; lastPair: { code: number; value: string } | null } {
+  let name = '';
+  let colorIndex: number | undefined;
+  let isFrozen = false;
+  let lastPair: { code: number; value: string } | null = null;
+
+  while (true) {
+    const pair = getNextPair();
+    if (!pair) break;
+    const { code, value } = pair;
+    if (code === 0) {
+      lastPair = pair;
+      break;
+    }
+    if (code === 2) name = value;
+    else if (code === 62) colorIndex = Math.abs(parseInt(value, 10));
+    else if (code === 70) isFrozen = (parseInt(value, 10) & 1) === 1;
+  }
+
+  const layer = name ? { name, colorIndex, isFrozen } : null;
+  return { layer, lastPair };
 }
 
 function parseEntity(
@@ -128,6 +177,10 @@ function parseEntity(
     }
 
     const numVal = parseFloat(value);
+
+    if (code === 8) {
+      entity.layer = value;
+    }
 
     if (type === 'LINE') {
       if (code === 10) entity.x1 = numVal;
@@ -173,6 +226,7 @@ function parseEntity(
 export function loadDxfIntoDoc(doc: Doc, parseResult: DxfParseResult): void {
   for (const entity of parseResult.entities) {
     const groupId = doc.newGroupId();
+    const layerId = entity.layer || '0';
 
     if (entity.type === 'LINE') {
       if (
@@ -183,11 +237,16 @@ export function loadDxfIntoDoc(doc: Doc, parseResult: DxfParseResult): void {
       ) {
         const v1 = doc.addVertex(entity.x1, entity.y1);
         const v2 = doc.addVertex(entity.x2, entity.y2);
-        doc.addLineEdge(v1, v2, groupId);
+        doc.addLineEdge(v1, v2, groupId, layerId);
       }
     } else if (entity.type === 'CIRCLE') {
       if (entity.cx !== undefined && entity.cy !== undefined && entity.r !== undefined) {
-        commitCircle(doc, entity.cx, entity.cy, entity.r);
+        const vRight = doc.addVertex(entity.cx + entity.r, entity.cy);
+        const vLeft = doc.addVertex(entity.cx - entity.r, entity.cy);
+        doc.addArcEdge(vRight, vLeft, entity.cx, entity.cy, entity.r, groupId, layerId);
+        doc.addArcEdge(vLeft, vRight, entity.cx, entity.cy, entity.r, groupId, layerId);
+        doc.groupPrimitives.set(groupId, { type: 'circle', cx: entity.cx, cy: entity.cy, r: entity.r });
+        doc.groupIntact.add(groupId);
       }
     } else if (entity.type === 'ARC') {
       if (
@@ -207,7 +266,7 @@ export function loadDxfIntoDoc(doc: Doc, parseResult: DxfParseResult): void {
 
         const v1 = doc.addVertex(x1, y1);
         const v2 = doc.addVertex(x2, y2);
-        doc.addArcEdge(v1, v2, entity.cx, entity.cy, entity.r, groupId);
+        doc.addArcEdge(v1, v2, entity.cx, entity.cy, entity.r, groupId, layerId);
       }
     } else if (entity.type === 'LWPOLYLINE' && entity.points && entity.points.length > 1) {
       const pts = entity.points;
@@ -222,36 +281,31 @@ export function loadDxfIntoDoc(doc: Doc, parseResult: DxfParseResult): void {
         const v2 = doc.addVertex(p2.x, p2.y);
 
         if (p1.bulge && Math.abs(p1.bulge) > 1e-6) {
-          // Arc segment from bulge = tan(theta / 4)
           const theta = 4 * Math.atan(p1.bulge);
           const dx = p2.x - p1.x;
           const dy = p2.y - p1.y;
           const d = Math.hypot(dx, dy);
           const r = Math.abs(d / (2 * Math.sin(theta / 2)));
 
-          // Sagitta perpendicular distance
           const s = (p1.bulge * d) / 2;
           const mx = (p1.x + p2.x) / 2;
           const my = (p1.y + p2.y) / 2;
 
-          // Normal vector (-dy, dx) normalized
           const nx = -dy / d;
           const ny = dx / d;
 
-          // Center calculation
           const h = r - Math.abs(s);
           const signH = theta > 0 ? 1 : -1;
           const cx = mx + nx * h * signH;
           const cy = my + ny * h * signH;
 
-          // Bulge > 0 means CCW from p1 to p2
           if (p1.bulge > 0) {
-            doc.addArcEdge(v1, v2, cx, cy, r, groupId);
+            doc.addArcEdge(v1, v2, cx, cy, r, groupId, layerId);
           } else {
-            doc.addArcEdge(v2, v1, cx, cy, r, groupId);
+            doc.addArcEdge(v2, v1, cx, cy, r, groupId, layerId);
           }
         } else {
-          doc.addLineEdge(v1, v2, groupId);
+          doc.addLineEdge(v1, v2, groupId, layerId);
         }
       }
     }

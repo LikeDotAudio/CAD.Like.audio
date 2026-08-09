@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DrawingCanvas } from './components/DrawingCanvas';
 import { ImagePanel } from './components/ImagePanel';
+import { LayersPanel } from './components/LayersPanel';
 import { StatusBar } from './components/StatusBar';
 import { Toolbar } from './components/Toolbar';
 import { EditorStore } from './state/EditorStore';
@@ -11,9 +12,10 @@ export default function App() {
 
   return (
     <EditorContext.Provider value={store}>
-      <div className="flex h-full flex-col overflow-hidden">
+      <div className="relative flex h-full flex-col overflow-hidden">
         <Toolbar />
         <DrawingCanvas />
+        <LayersPanel />
         <ImagePanel />
         <StatusBar />
       </div>

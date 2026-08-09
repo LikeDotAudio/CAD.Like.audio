@@ -41,7 +41,7 @@ export const rectTool: Tool<RectState> = {
     const from = state.start;
     state.start = null;
     api.closeDynInput();
-    api.edit(() => commitRect(api.doc, from.x, from.y, input.world.x, input.world.y));
+    api.edit(() => commitRect(api.doc, from.x, from.y, input.world.x, input.world.y, api.activeLayerId));
   },
 
   onDoubleClick(state, _input, api) {
@@ -66,11 +66,15 @@ export const rectTool: Tool<RectState> = {
     ctx.setLineDash([6, 4]);
     ctx.strokeStyle = CANVAS.preview;
     ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.rect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y));
-    ctx.stroke();
+    ctx.strokeRect(
+      Math.min(a.x, b.x),
+      Math.min(a.y, b.y),
+      Math.abs(b.x - a.x),
+      Math.abs(b.y - a.y),
+    );
     ctx.setLineDash([]);
     ctx.restore();
+
     annotateRect(scene, state.start.x, state.start.y, pointer.world.x, pointer.world.y);
   },
 
@@ -82,8 +86,9 @@ export const rectTool: Tool<RectState> = {
 
     placeholder(state, key, _mode, cursor, units) {
       if (!state.start) return '';
-      const d = key === 'w' ? cursor.x - state.start.x : cursor.y - state.start.y;
-      return formatField(Math.abs(d), units);
+      const dx = Math.abs(cursor.x - state.start.x);
+      const dy = Math.abs(cursor.y - state.start.y);
+      return formatField(key === 'w' ? dx : dy, units);
     },
 
     resolve(state, values, _mode, cursor) {
@@ -108,7 +113,7 @@ export const rectTool: Tool<RectState> = {
       if (!from) return;
       state.start = null;
       api.closeDynInput();
-      api.edit(() => commitRect(api.doc, from.x, from.y, point.x, point.y));
+      api.edit(() => commitRect(api.doc, from.x, from.y, point.x, point.y, api.activeLayerId));
     },
   },
 };

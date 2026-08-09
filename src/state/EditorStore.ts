@@ -1,4 +1,5 @@
-import type { Point, ToolId, Units, ValidationResult } from '../core/types';
+import type { Layer, Point, ToolId, Units, ValidationResult } from '../core/types';
+import { aciToHex } from '../core/dxfColors';
 import { calibrationFactor, idleCalibration, type CalibrationState } from '../image/calibration';
 import { isOverImage, type TracingImage } from '../image/TracingImage';
 import { saveDxf } from '../io/exportDxf';
@@ -54,6 +55,8 @@ export interface UiState {
   /** Canvas-space anchor for the "enter real distance" dialog. */
   calibrationBox: Point | null;
   dyn: DynUi | null;
+  layers: Layer[];
+  activeLayerId: string;
 }
 
 const ORIGIN: Point = { x: 0, y: 0 };
@@ -79,6 +82,11 @@ export class EditorStore {
   private units: Units = 'in';
   private gridSize = 0.25;
   private snapToGrid = true;
+
+  private layers: Map<string, Layer> = new Map([
+    ['0', { id: '0', name: '0', color: '#1a1a1a', dxfColorIndex: 7, visible: true }],
+  ]);
+  private activeLayerId = '0';
 
   private hoverId: number | null = null;
   private snap: Snap | null = null;
@@ -127,6 +135,9 @@ export class EditorStore {
       },
       get gridSize() {
         return store.gridSize;
+      },
+      get activeLayerId() {
+        return store.activeLayerId;
       },
       edit: (mutate) => this.edit(mutate),
       showHint: (msg, dur) => this.showHint(msg, dur),
@@ -186,6 +197,8 @@ export class EditorStore {
       calibrationActive: this.calibration.active,
       calibrationBox: this.calibrationBox,
       dyn: this.buildDynUi(),
+      layers: Array.from(this.layers.values()),
+      activeLayerId: this.activeLayerId,
     };
   }
 
@@ -231,6 +244,7 @@ export class EditorStore {
       tracing: this.tracing,
       calibration: this.calibration,
       validation: this.validation(),
+      layers: this.layers,
     });
   }
 
@@ -630,6 +644,20 @@ export class EditorStore {
       this.setUnits(result.units);
     }
 
+    // Populate DXF layers into layer store
+    if (result.layers && result.layers.length > 0) {
+      for (const dxfLayer of result.layers) {
+        const hexColor = aciToHex(dxfLayer.colorIndex);
+        this.layers.set(dxfLayer.name, {
+          id: dxfLayer.name,
+          name: dxfLayer.name,
+          color: hexColor,
+          dxfColorIndex: dxfLayer.colorIndex || 7,
+          visible: !dxfLayer.isFrozen,
+        });
+      }
+    }
+
     loadDxfIntoDoc(this.doc, result);
 
     this.selection.clear();
@@ -640,7 +668,81 @@ export class EditorStore {
     this.markDocChanged();
     this.requestDraw();
     this.emit();
-    this.showHint(`Opened DXF: imported ${result.entities.length} entities.`, 5000);
+    this.showHint(`Opened DXF: imported ${result.entities.length} entities across ${this.layers.size} layers.`, 5000);
+  }
+
+  // ------------------------------------------------------------------- layers
+
+  setActiveLayer(id: string): void {
+    if (this.layers.has(id)) {
+      this.activeLayerId = id;
+      this.emit();
+    }
+  }
+
+  addLayer(name: string, color = '#3b82f6'): void {
+    const cleanName = name.trim();
+    if (!cleanName || this.layers.has(cleanName)) return;
+    const layer: Layer = {
+      id: cleanName,
+      name: cleanName,
+      color,
+      visible: true,
+    };
+    this.layers.set(cleanName, layer);
+    this.activeLayerId = cleanName;
+    this.requestDraw();
+    this.emit();
+  }
+
+  toggleLayerVisibility(id: string): void {
+    const layer = this.layers.get(id);
+    if (!layer) return;
+    layer.visible = !layer.visible;
+    this.requestDraw();
+    this.emit();
+  }
+
+  setLayerColor(id: string, color: string): void {
+    const layer = this.layers.get(id);
+    if (!layer) return;
+    layer.color = color;
+    this.requestDraw();
+    this.emit();
+  }
+
+  renameLayer(id: string, newName: string): void {
+    const clean = newName.trim();
+    if (!clean || clean === id || this.layers.has(clean)) return;
+    const layer = this.layers.get(id);
+    if (!layer) return;
+
+    this.layers.delete(id);
+    layer.id = clean;
+    layer.name = clean;
+    this.layers.set(clean, layer);
+
+    if (this.activeLayerId === id) {
+      this.activeLayerId = clean;
+    }
+
+    // Update layerId on all edges referencing old layer id
+    for (const e of this.doc.edges.values()) {
+      if (e.layerId === id) e.layerId = clean;
+    }
+
+    this.requestDraw();
+    this.emit();
+  }
+
+  setSelectionLayer(layerId: string): void {
+    if (!this.layers.has(layerId) || this.selection.size === 0) return;
+    for (const edgeId of this.selection) {
+      const e = this.doc.edges.get(edgeId);
+      if (e) e.layerId = layerId;
+    }
+    this.requestDraw();
+    this.emit();
   }
 
   // ------------------------------------------------------------------- image

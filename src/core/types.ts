@@ -18,6 +18,14 @@ export interface BBox {
   y2: number;
 }
 
+export interface Layer {
+  id: string;
+  name: string;
+  color: string; // Hex color e.g. '#3b82f6'
+  dxfColorIndex?: number; // AutoCAD Color Index (ACI 1-255)
+  visible: boolean;
+}
+
 interface EdgeBase {
   id: number;
   /** Start vertex id. */
@@ -26,6 +34,8 @@ interface EdgeBase {
   v2: number;
   /** Id of the drawing operation that produced this edge (0 = none). */
   groupId: number;
+  /** Layer identifier (defaults to '0'). */
+  layerId: string;
 }
 
 export interface LineEdge extends EdgeBase {

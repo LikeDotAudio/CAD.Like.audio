@@ -25,6 +25,7 @@ export interface ToolApi {
   readonly view: Viewport;
   readonly units: Units;
   readonly gridSize: number;
+  readonly activeLayerId: string;
   /** Live selection set — tools may mutate it directly. */
   readonly selection: Set<number>;
   /**

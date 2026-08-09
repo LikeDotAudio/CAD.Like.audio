@@ -48,7 +48,7 @@ export const splineTool: Tool<SplineState> = {
     if (state.pts.length >= 3 && distToFirst(state, api, input.screen) < CLOSE_LOOP_PX) {
       const pts = state.pts;
       state.pts = [];
-      api.edit(() => commitSpline(api.doc, pts, true));
+      api.edit(() => commitSpline(api.doc, pts, true, 24, api.activeLayerId));
       api.showHint('Curve closed.', 3000);
       return;
     }
@@ -60,7 +60,7 @@ export const splineTool: Tool<SplineState> = {
     if (state.pts.length < 2) return;
     const pts = state.pts;
     state.pts = [];
-    api.edit(() => commitSpline(api.doc, pts, false));
+    api.edit(() => commitSpline(api.doc, pts, false, 24, api.activeLayerId));
   },
 
   onEscape(state, api) {

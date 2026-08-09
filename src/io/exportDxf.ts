@@ -24,10 +24,10 @@ function header(units: Units): string {
   );
 }
 
-function circleEntity(cx: number, cy: number, r: number): string {
+function circleEntity(cx: number, cy: number, r: number, layer = '0'): string {
   return (
     pair('  0', 'CIRCLE') +
-    pair('  8', '0') +
+    pair('  8', layer) +
     pair(' 10', cx.toFixed(8)) +
     pair(' 20', cy.toFixed(8)) +
     pair(' 30', '0.0') +
@@ -39,7 +39,7 @@ function lineEntity(doc: Doc, e: Edge): string {
   const [a, b] = doc.endpointsOf(e);
   return (
     pair('  0', 'LINE') +
-    pair('  8', '0') +
+    pair('  8', e.layerId || '0') +
     pair(' 10', a.x.toFixed(8)) +
     pair(' 20', a.y.toFixed(8)) +
     pair(' 30', '0.0') +
@@ -57,7 +57,7 @@ function arcEntity(doc: Doc, e: Extract<Edge, { type: 'arc' }>): string {
   const a2 = ((Math.atan2(b.y - e.cy, b.x - e.cx) * 180) / Math.PI + 360) % 360;
   return (
     pair('  0', 'ARC') +
-    pair('  8', '0') +
+    pair('  8', e.layerId || '0') +
     pair(' 10', e.cx.toFixed(8)) +
     pair(' 20', e.cy.toFixed(8)) +
     pair(' 30', '0.0') +
@@ -84,7 +84,7 @@ export function buildDxf(doc: Doc, units: Units): string {
   for (const [groupId, list] of byGroup) {
     const prim = doc.groupPrimitives.get(groupId);
     if (prim?.type === 'circle' && doc.groupIntact.has(groupId) && list.length === 2) {
-      entities += circleEntity(prim.cx, prim.cy, prim.r);
+      entities += circleEntity(prim.cx, prim.cy, prim.r, list[0]?.layerId || '0');
       continue;
     }
     for (const e of list) {

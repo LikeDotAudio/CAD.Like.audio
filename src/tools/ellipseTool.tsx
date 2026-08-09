@@ -42,7 +42,7 @@ export const ellipseTool: Tool<EllipseState> = {
     const rx = Math.abs(input.world.x - centre.x);
     const ry = Math.abs(input.world.y - centre.y);
     state.centre = null;
-    api.edit(() => commitEllipse(api.doc, centre.x, centre.y, rx, ry));
+    api.edit(() => commitEllipse(api.doc, centre.x, centre.y, rx, ry, 96, api.activeLayerId));
   },
 
   onDoubleClick(state, _input, api) {

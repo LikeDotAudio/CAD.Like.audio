@@ -1,5 +1,5 @@
 import { TAU } from '../core/constants';
-import type { Edge } from '../core/types';
+import type { Edge, Layer } from '../core/types';
 import type { Scene } from './Scene';
 import { CANVAS, FONT } from './palette';
 
@@ -34,13 +34,20 @@ export interface EdgeStyleState {
   selected: ReadonlySet<number>;
   hoverId: number | null;
   hoverEnabled: boolean;
+  layers?: ReadonlyMap<string, Layer>;
 }
 
 export function drawEdges(scene: Scene, state: EdgeStyleState): void {
   for (const e of scene.doc.edges.values()) {
+    const layer = state.layers?.get(e.layerId ?? '0');
+    // Hide edge if its assigned layer is hidden
+    if (layer && !layer.visible) continue;
+
+    const baseColor = layer?.color || CANVAS.edge;
+
     if (state.selected.has(e.id)) renderEdge(scene, e, CANVAS.edgeSelected, 2.8);
     else if (state.hoverEnabled && e.id === state.hoverId) renderEdge(scene, e, CANVAS.edgeHover, 2.2);
-    else renderEdge(scene, e, CANVAS.edge, 1.5);
+    else renderEdge(scene, e, baseColor, 1.5);
   }
 }
 
