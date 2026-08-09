@@ -1,5 +1,6 @@
 import type { Units } from '../core/types';
-import { useStore, useUi } from '../state/useEditor';
+import { useStore } from '../state/useStore';
+import { useUi } from '../state/useUi';
 
 const OPTIONS: Units[] = ['in', 'mm'];
 

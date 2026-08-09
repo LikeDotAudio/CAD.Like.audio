@@ -1,4 +1,5 @@
-import { imageScreenRect, type TracingImage } from '../image/TracingImage';
+import type { TracingImage } from '../image/TracingImage';
+import { imageScreenRect } from '../image/imageScreenRect';
 import type { Scene } from './Scene';
 import { CANVAS } from './palette';
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { useStore, useUi } from '../state/useEditor';
+import { useStore } from '../state/useStore';
+import { useUi } from '../state/useUi';
 
 const NUMERIC_KEY = /^[0-9.\-+\/*()]$/;
 

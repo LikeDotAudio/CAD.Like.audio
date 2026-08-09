@@ -1,4 +1,5 @@
-import { useStore, useUi } from '../state/useEditor';
+import { useStore } from '../state/useStore';
+import { useUi } from '../state/useUi';
 import { LABEL_CAPS, NUMBER_INPUT } from './styles';
 
 export function GridControls() {

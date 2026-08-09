@@ -1,5 +1,5 @@
 import type { Point } from '../core/types';
-import { commitCircle } from '../model/commits';
+import { commitCircle } from '../model/commits/commitCircle';
 import { CANVAS } from '../render/palette';
 import type { Tool } from './types';
 

@@ -1,5 +1,5 @@
-import type { CalibrationState } from '../image/calibration';
-import { dot } from './dimensions';
+import type { CalibrationState } from '../image/calibration/CalibrationState';
+import { dot } from './dot';
 import type { Scene } from './Scene';
 import { CANVAS } from './palette';
 

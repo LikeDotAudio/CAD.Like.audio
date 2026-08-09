@@ -1,4 +1,4 @@
-import { clamp01 } from '../core/constants';
+import { clamp01 } from '../core/clamp01';
 
 /** Shortest distance from (px, py) to the segment a→b. */
 export function distToSegment(

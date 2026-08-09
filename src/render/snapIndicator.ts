@@ -1,5 +1,5 @@
 import { TAU } from '../core/constants';
-import type { Snap } from '../viewport/snap';
+import type { Snap } from '../viewport/snap/findSnap';
 import type { Scene } from './Scene';
 import { CANVAS } from './palette';
 

@@ -1,6 +1,6 @@
 import type { Point } from '../core/types';
-import { formatLength } from '../model/units';
-import { dot } from '../render/dimensions';
+import { formatLength } from '../model/units/formatLength';
+import { dot } from '../render/dot';
 import { CANVAS, FONT } from '../render/palette';
 import type { Tool, ToolApi } from './types';
 

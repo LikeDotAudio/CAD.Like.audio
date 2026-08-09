@@ -1,7 +1,7 @@
 import type { Point } from '../core/types';
-import { commitRect } from '../model/commits';
-import { formatField } from '../model/units';
-import { annotateRect } from '../render/dimensions';
+import { commitRect } from '../model/commits/commitRect';
+import { formatField } from '../model/units/formatField';
+import { annotateRect } from '../render/dimensions/annotateRect';
 import { CANVAS } from '../render/palette';
 import type { Tool } from './types';
 

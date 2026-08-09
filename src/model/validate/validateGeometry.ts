@@ -1,7 +1,11 @@
-import type { Point, ValidationResult } from '../core/types';
-import { bboxContains, pointInPolygon, polyBBox } from '../geometry/polygon';
-import type { Doc } from './Doc';
-import { connectedComponents, cyclePoints, cycleWalk } from './topology';
+import type { Point, ValidationResult } from '../../core/types';
+import { bboxContains } from '../../geometry/polygon/bboxContains';
+import { pointInPolygon } from '../../geometry/polygon/pointInPolygon';
+import { polyBBox } from '../../geometry/polygon/polyBBox';
+import type { Doc } from '../Doc';
+import { connectedComponents } from '../topology/connectedComponents';
+import { cyclePoints } from '../topology/cyclePoints';
+import { cycleWalk } from '../topology/cycleWalk';
 
 /**
  * A drawing is cuttable when every outline is a simple closed loop, there is

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Units } from '../core/types';
-import { unitFactor } from '../model/units';
+import { unitFactor } from '../model/units/unitFactor';
 
 interface ImportUnitModalProps {
   filename: string;

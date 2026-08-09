@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { DrawingCanvas } from './components/DrawingCanvas';
 import { ImagePanel } from './components/ImagePanel';
-import { SidebarPanel } from './components/SidebarPanel';
-import { StatusBar } from './components/StatusBar';
-import { Toolbar } from './components/Toolbar';
-import { VerticalToolbar } from './components/VerticalToolbar';
+import { SidebarPanel } from './components/sidebar/SidebarPanel';
+import { StatusBar } from './components/statusbar/StatusBar';
+import { MenuBar } from './components/menubar/MenuBar';
+import { VerticalToolbar } from './components/toolbar/VerticalToolbar';
 import { EditorStore } from './state/EditorStore';
-import { EditorContext } from './state/useEditor';
+import { EditorContext } from './state/EditorContext';
 
 export default function App() {
   const [store] = useState(() => new EditorStore());
@@ -15,7 +15,7 @@ export default function App() {
     <EditorContext.Provider value={store}>
       <div className="flex h-full flex-col overflow-hidden bg-[#1e1e1e]">
         {/* Top CAD Header Bar */}
-        <Toolbar />
+        <MenuBar />
 
         {/* Main Work Area: Left Toolbar + Canvas + Right Sidebar */}
         <div className="flex flex-1 overflow-hidden relative">

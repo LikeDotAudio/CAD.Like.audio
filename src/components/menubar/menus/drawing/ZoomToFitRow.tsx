@@ -1,0 +1,23 @@
+import { useStore } from '../../../../state/useStore';
+
+export interface ZoomToFitRowProps {
+  onDone: () => void;
+}
+
+/** Fit the whole drawing in the viewport — same action as Zoom All in the toolbar. */
+export function ZoomToFitRow({ onDone }: ZoomToFitRowProps) {
+  const store = useStore();
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        onDone();
+        store.zoomToFit();
+      }}
+      className="flex items-center justify-between rounded border border-[#3c3c3c] bg-[#1e1e1e] p-2 text-[11px] font-semibold text-white transition-colors hover:bg-[#094771]"
+    >
+      <span className="flex items-center gap-2">🔍 Zoom to Fit Extent</span>
+    </button>
+  );
+}

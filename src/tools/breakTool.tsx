@@ -1,5 +1,6 @@
-import { breakCircle, findCircleAt } from '../model/breakCircle';
-import { dot } from '../render/dimensions';
+import { breakCircle } from '../model/breakCircle/breakCircle';
+import { findCircleAt } from '../model/breakCircle/findCircleAt';
+import { dot } from '../render/dot';
 import { CANVAS } from '../render/palette';
 import type { Tool } from './types';
 

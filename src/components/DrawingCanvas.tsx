@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { useStore } from '../state/useEditor';
-import { ContextMenu } from './ContextMenu';
+import { useStore } from '../state/useStore';
+import { ContextMenu } from './contextmenu/ContextMenu';
 import { DynInput } from './DynInput';
 import { Hint } from './Hint';
 import { ScaleBox } from './ScaleBox';

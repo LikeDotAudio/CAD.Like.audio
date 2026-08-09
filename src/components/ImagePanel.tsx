@@ -1,4 +1,5 @@
-import { useStore, useUi } from '../state/useEditor';
+import { useStore } from '../state/useStore';
+import { useUi } from '../state/useUi';
 import { BTN, BTN_BASE, LABEL_CAPS, NUMBER_INPUT } from './styles';
 
 /** Controls for the tracing image; only mounted while one is loaded. */

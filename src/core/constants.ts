@@ -19,6 +19,3 @@ export const MAX_ZOOM = 500000;
 export const CLOSE_LOOP_PX = 14;
 
 export const MAX_HISTORY = 60;
-
-export const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-export const clamp01 = (v: number) => clamp(v, 0, 1);

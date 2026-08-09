@@ -1,13 +1,15 @@
 import type { Layer, ValidationResult } from '../core/types';
-import type { CalibrationState } from '../image/calibration';
+import type { CalibrationState } from '../image/calibration/CalibrationState';
 import type { TracingImage } from '../image/TracingImage';
 import type { AnyTool } from '../tools/types';
-import type { Snap } from '../viewport/snap';
-import { drawCalibration } from './calibration';
-import { drawBadVertexMarkers, drawEdges } from './edges';
-import { drawGrid } from './grid';
+import type { Snap } from '../viewport/snap/findSnap';
+import { drawCalibration } from './drawCalibration';
+import { drawBadVertexMarkers } from './edges/drawBadVertexMarkers';
+import { drawEdges } from './edges/drawEdges';
+import { drawGrid } from './grid/drawGrid';
 import { drawImageLayer } from './imageLayer';
-import { drawBoundsOverlay, drawErrorBanner } from './overlays';
+import { drawBoundsOverlay } from './overlays/drawBoundsOverlay';
+import { drawErrorBanner } from './overlays/drawErrorBanner';
 import type { Scene } from './Scene';
 import { drawSnapIndicator } from './snapIndicator';
 

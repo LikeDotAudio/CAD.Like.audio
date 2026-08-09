@@ -1,8 +1,9 @@
 import { CLOSE_LOOP_PX } from '../core/constants';
 import type { Point } from '../core/types';
-import { splineSegments } from '../geometry/spline';
-import { commitSpline } from '../model/commits';
-import { closeLoopTarget, dot } from '../render/dimensions';
+import { splineSegments } from '../geometry/spline/splineSegments';
+import { commitSpline } from '../model/commits/commitSpline';
+import { closeLoopTarget } from '../render/closeLoopTarget';
+import { dot } from '../render/dot';
 import { CANVAS } from '../render/palette';
 import type { Tool, ToolApi } from './types';
 

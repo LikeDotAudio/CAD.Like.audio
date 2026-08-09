@@ -1,7 +1,7 @@
 import { TAU } from '../core/constants';
 import type { Point } from '../core/types';
-import { commitEllipse } from '../model/commits';
-import { annotateEllipse } from '../render/dimensions';
+import { commitEllipse } from '../model/commits/commitEllipse';
+import { annotateEllipse } from '../render/dimensions/annotateEllipse';
 import { CANVAS } from '../render/palette';
 import type { Tool } from './types';
 

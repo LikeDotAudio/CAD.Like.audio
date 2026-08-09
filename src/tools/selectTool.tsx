@@ -1,7 +1,11 @@
-import { edgesInChainOf, edgesInGroupOf } from '../model/topology';
-import { dot } from '../render/dimensions';
+import { edgesInChainOf } from '../model/topology/edgesInChainOf';
+import { edgesInGroupOf } from '../model/topology/edgesInGroupOf';
+import { dot } from '../render/dot';
 import { CANVAS } from '../render/palette';
-import { cornerCursor, hitCorner, oppositeCorner, paddedBounds } from '../render/selectionBox';
+import { cornerCursor } from '../render/selectionBox/cornerCursor';
+import { hitCorner } from '../render/selectionBox/hitCorner';
+import { oppositeCorner } from '../render/selectionBox/oppositeCorner';
+import { paddedBounds } from '../render/selectionBox/paddedBounds';
 import type { Point } from '../core/types';
 import type { ToolApi } from './types';
 import type { Tool } from './types';

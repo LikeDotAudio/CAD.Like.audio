@@ -1,7 +1,9 @@
 import { CLOSE_LOOP_PX } from '../core/constants';
 import type { Point } from '../core/types';
-import { commitPolyline } from '../model/commits';
-import { annotateSegment, closeLoopTarget, dot } from '../render/dimensions';
+import { commitPolyline } from '../model/commits/commitPolyline';
+import { annotateSegment } from '../render/dimensions/annotateSegment';
+import { closeLoopTarget } from '../render/closeLoopTarget';
+import { dot } from '../render/dot';
 import { CANVAS } from '../render/palette';
 import type { Tool, ToolApi } from './types';
 

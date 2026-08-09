@@ -1,4 +1,6 @@
-import { MAX_ZOOM, MIN_ZOOM, clamp } from '../core/constants';
+import { MAX_ZOOM } from '../core/constants';
+import { MIN_ZOOM } from '../core/constants';
+import { clamp } from '../core/clamp';
 import type { Point } from '../core/types';
 
 /**

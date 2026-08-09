@@ -1,4 +1,4 @@
-import { useUi } from '../state/useEditor';
+import { useUi } from '../state/useUi';
 
 /** Transient instruction bubble above the bottom of the canvas. */
 export function Hint() {

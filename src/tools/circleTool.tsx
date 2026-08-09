@@ -1,8 +1,8 @@
 import { TAU } from '../core/constants';
 import type { Point } from '../core/types';
-import { commitCircle } from '../model/commits';
-import { formatField } from '../model/units';
-import { annotateCircle } from '../render/dimensions';
+import { commitCircle } from '../model/commits/commitCircle';
+import { formatField } from '../model/units/formatField';
+import { annotateCircle } from '../render/dimensions/annotateCircle';
 import { CANVAS } from '../render/palette';
 import type { Tool } from './types';
 

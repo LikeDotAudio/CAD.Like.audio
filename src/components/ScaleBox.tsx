@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useStore, useUi } from '../state/useEditor';
+import { useStore } from '../state/useStore';
+import { useUi } from '../state/useUi';
 
 /**
  * Prompt for the real distance between the two calibration points. Positioned
