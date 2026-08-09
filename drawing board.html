@@ -1,0 +1,1719 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Can-Cut — Draw Your Shape</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f6f4ef;
+  --paper-2:#ecebe4;
+  --ink:#15181b;
+  --ink-2:#3a3f45;
+  --ink-3:#707680;
+  --rule:#d9d6cd;
+  --rule-2:#c7c3b8;
+  --accent:#ff5a1f;
+  --accent-ink:#c83f0b;
+  --sans:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-feature-settings:"ss01","cv11"}
+
+#topbar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--paper);border-bottom:1px solid var(--rule);flex-shrink:0;flex-wrap:wrap}
+h1{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-right:6px}
+.sep{width:1px;height:22px;background:var(--rule);flex-shrink:0}
+.tb{display:flex;gap:4px}
+
+.btn{padding:7px 12px;border:1px solid var(--rule-2);border-radius:8px;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:border-color .15s,background .15s,color .15s}
+.btn:hover{border-color:var(--ink);background:var(--paper)}
+.btn.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.btn.on:hover{background:#000;border-color:#000}
+.btn svg{width:13px;height:13px;flex-shrink:0}
+
+.unit-toggle{display:flex;border:1px solid var(--rule-2);border-radius:8px;overflow:hidden;background:var(--paper)}
+.unit-toggle button{padding:6px 12px;border:none;background:transparent;color:var(--ink-2);font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.04em;cursor:pointer;transition:background .15s,color .15s}
+.unit-toggle button:hover{color:var(--ink)}
+.unit-toggle button.on{background:var(--ink);color:var(--paper)}
+
+input[type=number]{width:72px;padding:6px 8px;border:1px solid var(--rule-2);border-radius:8px;font-family:var(--mono);font-size:12px;text-align:center;color:var(--ink);background:var(--paper);transition:border-color .15s}
+input[type=number]:focus{outline:none;border-color:var(--ink)}
+
+#topbar > label{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+#topbar input[type=checkbox]{accent-color:var(--ink);width:14px;height:14px;cursor:pointer}
+
+#canvas-wrap{flex:1;position:relative;overflow:hidden;background:#ffffff}
+canvas{position:absolute;top:0;left:0}
+
+#hint{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:6px;font-family:var(--sans);font-size:13px;font-weight:500;pointer-events:none;white-space:nowrap;transition:opacity .4s;box-shadow:0 8px 24px -8px rgba(21,24,27,.4)}
+#hint.hide{opacity:0}
+
+#img-panel{display:none;align-items:center;gap:10px;padding:8px 16px;background:var(--paper-2);border-bottom:1px solid var(--rule);flex-shrink:0;flex-wrap:wrap;font-family:var(--sans);font-size:13px;color:var(--ink-2)}
+#img-panel label{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+#img-panel input[type=range]{width:90px;cursor:pointer;accent-color:var(--ink)}
+
+#scale-box{display:none;position:absolute;z-index:50;background:var(--paper);border:1px solid var(--rule);border-radius:12px;padding:18px 20px;box-shadow:0 12px 32px -8px rgba(21,24,27,.18);min-width:240px}
+#scale-box p{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+#scale-box .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#scale-box input{width:96px;padding:8px 10px;border:1px solid var(--rule-2);border-radius:8px;font-family:var(--mono);font-size:13px;color:var(--ink);background:var(--paper)}
+#scale-box input:focus{outline:none;border-color:var(--ink)}
+#scale-box .apply{padding:8px 14px;background:var(--ink);color:var(--paper);border:none;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer}
+#scale-box .apply:hover{background:#000}
+#scale-box .cancel{padding:8px 12px;background:transparent;color:var(--ink);border:1px solid var(--rule-2);border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer}
+#scale-box .cancel:hover{border-color:var(--ink)}
+
+#status-bar{display:flex;align-items:center;gap:18px;padding:8px 16px;background:var(--paper);border-top:1px solid var(--rule);font-family:var(--mono);font-size:12px;color:var(--ink-3);flex-shrink:0}
+#status-bar #xy{color:var(--ink-2);letter-spacing:.02em}
+#status-bar #entity-count{letter-spacing:.04em}
+
+.dl-btn{margin-left:auto;padding:9px 18px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.01em;cursor:pointer;transition:background .15s;display:inline-flex;align-items:center;gap:6px}
+.dl-btn:hover{background:var(--accent-ink)}
+.dl-btn.disabled{background:var(--rule);color:var(--ink-3);cursor:not-allowed}
+.dl-btn.disabled:hover{background:var(--rule)}
+
+#validation-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:4px;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;border:1px solid transparent}
+#validation-pill.ok{background:#eaf3ec;color:#1a7a3a;border-color:#cfe3d4}
+#validation-pill.bad{background:#fdeeea;color:var(--accent-ink);border-color:#f3c8b8}
+/* type-to-size dynamic dimension input (line / rect / circle) */
+.dyn{position:fixed;z-index:60;display:none;align-items:center;gap:6px;background:var(--paper);border:1.5px solid var(--ink);border-radius:9px;padding:5px 7px;box-shadow:3px 3px 0 rgba(21,24,27,.16)}
+.dyn .dyn-f{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+.dyn .dyn-f input{width:58px;padding:5px 6px;border:1px solid var(--rule-2);border-radius:6px;font-family:var(--mono);font-size:12px;text-align:center;color:var(--ink);background:#fff}
+.dyn .dyn-f input:focus{outline:none;border-color:var(--ink)}
+.dyn .dyn-f input::placeholder{color:var(--ink-3);opacity:.55}
+.dyn .dyn-sep{color:var(--rule-2);font-family:var(--mono);font-size:12px}
+.dyn .dyn-tog{padding:5px 7px;border:1px solid var(--rule-2);border-radius:6px;background:#fff;color:var(--ink);font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;min-width:24px;line-height:1}
+.dyn .dyn-tog:hover{border-color:var(--ink)}
+.dyn .dyn-hint{font-family:var(--mono);font-size:9px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-left:2px}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>Can-Cut</h1>
+  <span class="sep"></span>
+  <div class="tb" id="tools">
+    <button class="btn" data-tool="select" title="Select (S) - click a segment. Shift+click adds. Ctrl/Cmd+click selects whole drawn shape. Delete removes.">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2l10 6-5 1.5L6 14 3 2z"/></svg>Select
+    </button>
+    <button class="btn on" data-tool="line" title="Line (L) - Shift for ortho">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="14" x2="14" y2="2"/></svg>Line
+    </button>
+    <button class="btn" data-tool="polyline" title="Polyline (P) - Shift for ortho">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="2,13 5,5 10,9 14,3"/></svg>Polyline
+    </button>
+    <button class="btn" data-tool="spline" title="Curve (V)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13 C4 13 3 5 7 6 S12 10 14 3" fill="none"/></svg>Curve
+    </button>
+    <button class="btn" data-tool="rect" title="Rect (R)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="12" height="8"/></svg>Rect
+    </button>
+    <button class="btn" data-tool="circle" title="Circle (C) - exports as true CIRCLE in DXF">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/></svg>Circle
+    </button>
+    <button class="btn" data-tool="ellipse" title="Ellipse (E)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="8" cy="8" rx="6" ry="3.5"/></svg>Ellipse
+    </button>
+    <button class="btn" data-tool="break" title="Break (B) - click a circle, then click two points. CCW section is removed. Remaining pieces stay true arcs.">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8 A6 6 0 0 1 7 2.3"/><path d="M14 8 A6 6 0 0 1 9 13.7"/></svg>Break
+    </button>
+    <button class="btn" data-tool="measure" title="Measure (M)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="14" x2="14" y2="2"/><line x1="2" y1="11" x2="5" y2="14"/><line x1="5" y1="8" x2="8" y2="11"/><line x1="8" y1="5" x2="11" y2="8"/><line x1="11" y1="2" x2="14" y2="5"/></svg>Measure
+    </button>
+  </div>
+  <span class="sep"></span>
+  <button class="btn" onclick="document.getElementById('img-file').click()" title="Import image as tracing layer">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1"/><circle cx="5.5" cy="6.5" r="1.2"/><path d="M1 11l4-4 3 3 2-2 4 4"/></svg>Import Image
+  </button>
+  <input type="file" id="img-file" accept="image/*" style="display:none" onchange="loadImage(event)">
+  <span class="sep"></span>
+  <div class="unit-toggle">
+    <button id="btn-in" class="on" onclick="switchUnits('in')">in</button>
+    <button id="btn-mm" onclick="switchUnits('mm')">mm</button>
+  </div>
+  <label style="font-size:12px;color:#6b7280">Grid</label>
+  <input type="number" id="grid-size" value="0.25" step="0.05" min="0.01" oninput="gridSize=parseFloat(this.value)||0.1;draw()">
+  <label style="font-size:12px;color:#6b7280;display:flex;align-items:center;gap:3px">
+    <input type="checkbox" id="snap" checked onchange="snapEnabled=this.checked"> Snap
+  </label>
+  <span class="sep"></span>
+  <button class="btn" onclick="undo()">↩ Undo</button>
+  <button class="btn" onclick="clearAll()">✕ Clear</button>
+  <button class="dl-btn" id="dl-btn" onclick="downloadDXF()">⬇ Download DXF</button>
+</div>
+
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+  <div id="dyn" class="dyn"></div>
+  <div id="hint"></div>
+  <div id="scale-box">
+    <p>Enter real distance between the two points:</p>
+    <div class="row">
+      <input type="number" id="scale-dist" min="0.001" step="0.001" placeholder="e.g. 4">
+      <span id="scale-unit-label" style="font-size:12px;color:#6b7280"></span>
+      <button class="apply" onclick="applyScale()">Apply</button>
+      <button class="cancel" onclick="cancelScale()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="img-panel">
+  <label>Opacity</label>
+  <input type="range" id="img-opacity" min="0.05" max="1" step="0.05" value="0.4" oninput="imgOpacity=parseFloat(this.value);draw()">
+  <label>Image width</label>
+  <input type="number" id="img-world-w" min="0.1" step="0.1" value="10" oninput="imgWorldW=parseFloat(this.value)||10;draw()" style="width:72px">
+  <span id="img-unit-label" style="font-size:12px;color:#9ca3af"></span>
+  <button class="btn" onclick="toggleImgVisible()" id="img-vis-btn">Hide Image</button>
+  <button class="btn" onclick="startScaleCalibrate()">Set Scale from Image</button>
+  <button class="btn" style="color:#dc2626;border-color:#fca5a5" onclick="removeImage()">Remove</button>
+</div>
+
+<div id="status-bar">
+  <span id="xy">x: 0.000  y: 0.000</span>
+  <span id="measure-out" style="color:#16a34a;font-weight:600;display:none"></span>
+  <span id="validation-pill" class="ok">✓ Ready</span>
+  <span id="entity-count">0 edges</span>
+  <span style="color:#f97316;font-size:11px;font-weight:500">✦ For complex parts, please use your favourite 2D CAD software!</span>
+  <span style="margin-left:auto;font-size:11px;color:#9ca3af">Pan: middle-drag or Space+drag · Shift=ortho · S L P V R C E B M · Delete · Ctrl+Z · Ctrl+A</span>
+</div>
+
+<script>
+// Canvas / coords
+const canvas = document.getElementById('c'), ctx = canvas.getContext('2d'), wrap = document.getElementById('canvas-wrap');
+let tool = 'line', snapEnabled = true, units = 'in', gridSize = 0.25, scale = 80, panX = 0, panY = 0;
+let isPanning = false, panStart = {x:0,y:0}, panOrigin = {x:0,y:0}, spaceDown = false;
+let mouse = {x:0,y:0}, mouseRaw = {x:0,y:0}, activeSnap = null;
+let drawing = false, startPt = null, polyPts = [];
+let selectedEdgeIds = new Set(), hoverEdgeId = null;
+let measurePt1 = null, measurePt2 = null;
+let imgObj = null, imgX = 0, imgY = 0, imgWorldW = 10, imgOpacity = 0.4, imgVisible = true;
+let imgDragging = false, imgDragStartMouse = null, imgDragStartPos = null;
+let scaleCalMode = false, scalePt1 = null, scalePt2 = null, scaleScreenPt1 = null, scaleScreenPt2 = null;
+let breakTargetGroup = null, breakFirstAngle = null;
+
+const TAU = Math.PI * 2;
+const toS = (wx, wy) => ({x: wx * scale + panX, y: -wy * scale + panY});
+const toW = (sx, sy) => ({x: (sx - panX) / scale, y: -(sy - panY) / scale});
+const fmtN = v => units === 'mm' ? v.toFixed(1) : v.toFixed(3);
+
+// ============================================================================
+// GRAPH MODEL — line + true-arc edges
+// ============================================================================
+// Edges are either:
+//   {id, v1, v2, groupId, type:'line'}
+//   {id, v1, v2, groupId, type:'arc', cx, cy, r}   // CCW from v1 to v2
+// A circle is stored as two half-arcs sharing two vertices (angles 0 and π).
+
+let vertices = new Map(), edges = new Map();
+let groupPrimitives = new Map(), groupIntact = new Set();
+let nextVertexId = 1, nextEdgeId = 1, nextGroupId = 1;
+const EPS = 1e-5;
+const V = id => vertices.get(id), E = id => edges.get(id);
+
+function findVertexNear(x, y, eps = EPS) {
+  for (const v of vertices.values()) {
+    if (Math.abs(v.x-x) < eps && Math.abs(v.y-y) < eps && Math.hypot(v.x-x, v.y-y) < eps) return v.id;
+  }
+  return null;
+}
+function addVertex(x, y) {
+  const ex = findVertexNear(x, y);
+  if (ex !== null) return ex;
+  const id = nextVertexId++;
+  vertices.set(id, {id, x, y});
+  return id;
+}
+function addLineEdge(v1, v2, groupId) {
+  if (v1 === v2) return null;
+  for (const e of edges.values()) {
+    if (e.type === 'line' && ((e.v1===v1 && e.v2===v2) || (e.v1===v2 && e.v2===v1))) return e.id;
+  }
+  const id = nextEdgeId++;
+  edges.set(id, {id, v1, v2, groupId, type: 'line'});
+  return id;
+}
+function addArcEdge(v1, v2, cx, cy, r, groupId) {
+  if (v1 === v2) return null;
+  for (const e of edges.values()) {
+    if (e.type === 'arc' && e.v1 === v1 && e.v2 === v2
+        && Math.abs(e.cx-cx) < EPS && Math.abs(e.cy-cy) < EPS && Math.abs(e.r-r) < EPS*10) return e.id;
+  }
+  const id = nextEdgeId++;
+  edges.set(id, {id, v1, v2, groupId, type: 'arc', cx, cy, r});
+  return id;
+}
+function removeEdgeById(id) {
+  const e = edges.get(id);
+  if (!e) return;
+  if (e.groupId) groupIntact.delete(e.groupId);
+  edges.delete(id);
+  pruneOrphanVertex(e.v1); pruneOrphanVertex(e.v2);
+}
+function pruneOrphanVertex(vId) {
+  for (const e of edges.values()) if (e.v1 === vId || e.v2 === vId) return;
+  vertices.delete(vId);
+}
+function vertexDegree(vId) {
+  let c = 0;
+  for (const e of edges.values()) { if (e.v1 === vId) c++; if (e.v2 === vId) c++; }
+  return c;
+}
+
+// ============================================================================
+// ARC GEOMETRY
+// ============================================================================
+function arcAngles(e) {
+  const v1 = V(e.v1), v2 = V(e.v2);
+  const a1 = Math.atan2(v1.y - e.cy, v1.x - e.cx);
+  const a2 = Math.atan2(v2.y - e.cy, v2.x - e.cx);
+  let sweep = a2 - a1;
+  while (sweep <= 1e-12) sweep += TAU;
+  return {a1, a2, sweep};
+}
+function arcParamFor(px, py, e) {
+  const ang = Math.atan2(py - e.cy, px - e.cx);
+  const {a1, sweep} = arcAngles(e);
+  let d = ang - a1;
+  while (d < -1e-9) d += TAU;
+  while (d >= TAU - 1e-9) d -= TAU;
+  if (d < -1e-9 || d > sweep + 1e-9) return null;
+  return Math.max(0, Math.min(1, d / sweep));
+}
+function arcPointAt(e, s) {
+  const {a1, sweep} = arcAngles(e);
+  const a = a1 + sweep * s;
+  return {x: e.cx + e.r * Math.cos(a), y: e.cy + e.r * Math.sin(a)};
+}
+function arcMidpoint(e) { return arcPointAt(e, 0.5); }
+function arcBBox(e) {
+  const v1 = V(e.v1), v2 = V(e.v2);
+  let x1 = Math.min(v1.x, v2.x), y1 = Math.min(v1.y, v2.y);
+  let x2 = Math.max(v1.x, v2.x), y2 = Math.max(v1.y, v2.y);
+  const {a1, sweep} = arcAngles(e);
+  for (const c of [0, Math.PI/2, Math.PI, 3*Math.PI/2]) {
+    let d = c - a1; while (d < 0) d += TAU; while (d >= TAU) d -= TAU;
+    if (d <= sweep) {
+      const px = e.cx + e.r*Math.cos(c), py = e.cy + e.r*Math.sin(c);
+      if (px < x1) x1 = px; if (py < y1) y1 = py;
+      if (px > x2) x2 = px; if (py > y2) y2 = py;
+    }
+  }
+  return {x1, y1, x2, y2};
+}
+function edgeBBox(e) {
+  if (e.type === 'arc') return arcBBox(e);
+  const a = V(e.v1), b = V(e.v2);
+  return {x1:Math.min(a.x,b.x), y1:Math.min(a.y,b.y), x2:Math.max(a.x,b.x), y2:Math.max(a.y,b.y)};
+}
+function allBBox() {
+  if (!edges.size) return null;
+  let x1=Infinity, y1=Infinity, x2=-Infinity, y2=-Infinity;
+  for (const e of edges.values()) {
+    const b = edgeBBox(e);
+    if (b.x1<x1) x1=b.x1; if (b.y1<y1) y1=b.y1;
+    if (b.x2>x2) x2=b.x2; if (b.y2>y2) y2=b.y2;
+  }
+  return {x1,y1,x2,y2};
+}
+
+// ============================================================================
+// INTERSECTION — line-line, line-arc, arc-arc
+// ============================================================================
+function sharesVertex(e1, e2) {
+  return e1.v1===e2.v1 || e1.v1===e2.v2 || e1.v2===e2.v1 || e1.v2===e2.v2;
+}
+function lineLineIntersect(a1, a2, b1, b2) {
+  const dax=a2.x-a1.x, day=a2.y-a1.y, dbx=b2.x-b1.x, dby=b2.y-b1.y;
+  const denom = dax*dby - day*dbx;
+  if (Math.abs(denom) < 1e-12) return [];
+  const t = ((b1.x-a1.x)*dby - (b1.y-a1.y)*dbx) / denom;
+  const s = ((b1.x-a1.x)*day - (b1.y-a1.y)*dax) / denom;
+  const EE = 1e-7;
+  if (t<=EE || t>=1-EE || s<=EE || s>=1-EE) return [];
+  return [{t, s, x: a1.x+t*dax, y: a1.y+t*day}];
+}
+function lineArcIntersect(la1, la2, arc) {
+  const dx=la2.x-la1.x, dy=la2.y-la1.y;
+  const fx=la1.x-arc.cx, fy=la1.y-arc.cy;
+  const A = dx*dx + dy*dy;
+  if (A < 1e-20) return [];
+  const B = 2*(fx*dx + fy*dy);
+  const C = fx*fx + fy*fy - arc.r*arc.r;
+  const disc = B*B - 4*A*C;
+  if (disc < -1e-12) return [];
+  const sq = Math.sqrt(Math.max(0, disc));
+  const EE = 1e-7;
+  const out = [];
+  for (const t of [(-B-sq)/(2*A), (-B+sq)/(2*A)]) {
+    if (t<=EE || t>=1-EE) continue;
+    const px = la1.x + t*dx, py = la1.y + t*dy;
+    const s = arcParamFor(px, py, arc);
+    if (s !== null && s > EE && s < 1-EE) out.push({t, s, x:px, y:py});
+  }
+  return out;
+}
+function arcArcIntersect(a1, a2) {
+  const dx=a2.cx-a1.cx, dy=a2.cy-a1.cy, d=Math.hypot(dx,dy);
+  if (d<1e-12 || d>a1.r+a2.r+1e-9 || d<Math.abs(a1.r-a2.r)-1e-9) return [];
+  const a = (a1.r*a1.r - a2.r*a2.r + d*d) / (2*d);
+  const h2 = a1.r*a1.r - a*a;
+  if (h2 < -1e-12) return [];
+  const h = Math.sqrt(Math.max(0, h2));
+  const mx = a1.cx + a*dx/d, my = a1.cy + a*dy/d;
+  const hx = -dy/d * h, hy = dx/d * h;
+  const cand = [{x:mx+hx, y:my+hy}];
+  if (h > 1e-10) cand.push({x:mx-hx, y:my-hy});
+  const EE = 1e-7;
+  const out = [];
+  for (const p of cand) {
+    const s1 = arcParamFor(p.x, p.y, a1), s2 = arcParamFor(p.x, p.y, a2);
+    if (s1 !== null && s2 !== null && s1>EE && s1<1-EE && s2>EE && s2<1-EE) out.push({s1,s2,x:p.x,y:p.y});
+  }
+  return out;
+}
+function splitLineAt(edgeId, ts) {
+  const e = edges.get(edgeId);
+  if (!e || e.type !== 'line') return [];
+  if (!ts.length) return [edgeId];
+  if (e.groupId) groupIntact.delete(e.groupId);
+  const a = V(e.v1), b = V(e.v2);
+  const sorted = ts.slice().sort((x,y)=>x-y);
+  const vIds = [e.v1];
+  for (const t of sorted) vIds.push(addVertex(a.x + t*(b.x-a.x), a.y + t*(b.y-a.y)));
+  vIds.push(e.v2);
+  edges.delete(edgeId);
+  const out = [];
+  for (let i = 0; i < vIds.length-1; i++) {
+    if (vIds[i] !== vIds[i+1]) { const n = addLineEdge(vIds[i], vIds[i+1], e.groupId); if (n) out.push(n); }
+  }
+  return out;
+}
+function splitArcAt(edgeId, ss) {
+  const e = edges.get(edgeId);
+  if (!e || e.type !== 'arc') return [];
+  if (!ss.length) return [edgeId];
+  if (e.groupId) groupIntact.delete(e.groupId);
+  const sorted = ss.slice().sort((x,y)=>x-y);
+  const vIds = [e.v1];
+  for (const s of sorted) { const p = arcPointAt(e, s); vIds.push(addVertex(p.x, p.y)); }
+  vIds.push(e.v2);
+  edges.delete(edgeId);
+  const out = [];
+  for (let i = 0; i < vIds.length-1; i++) {
+    if (vIds[i] !== vIds[i+1]) { const n = addArcEdge(vIds[i], vIds[i+1], e.cx, e.cy, e.r, e.groupId); if (n) out.push(n); }
+  }
+  return out;
+}
+function resolveAllIntersections() {
+  for (let pass = 0; pass < 8; pass++) {
+    const ids = Array.from(edges.keys());
+    const lineSp = new Map(), arcSp = new Map();
+    let found = false;
+    for (let i = 0; i < ids.length; i++) {
+      if (!edges.has(ids[i])) continue;
+      const ei = edges.get(ids[i]);
+      for (let j = i+1; j < ids.length; j++) {
+        if (!edges.has(ids[j])) continue;
+        const ej = edges.get(ids[j]);
+        if (sharesVertex(ei, ej)) continue;
+        let hits = [];
+        if (ei.type === 'line' && ej.type === 'line') {
+          hits = lineLineIntersect(V(ei.v1), V(ei.v2), V(ej.v1), V(ej.v2));
+          for (const h of hits) {
+            (lineSp.get(ei.id) || lineSp.set(ei.id,[]).get(ei.id)).push(h.t);
+            (lineSp.get(ej.id) || lineSp.set(ej.id,[]).get(ej.id)).push(h.s);
+            found = true;
+          }
+        } else if (ei.type === 'line' && ej.type === 'arc') {
+          hits = lineArcIntersect(V(ei.v1), V(ei.v2), ej);
+          for (const h of hits) {
+            (lineSp.get(ei.id) || lineSp.set(ei.id,[]).get(ei.id)).push(h.t);
+            (arcSp.get(ej.id) || arcSp.set(ej.id,[]).get(ej.id)).push(h.s);
+            found = true;
+          }
+        } else if (ei.type === 'arc' && ej.type === 'line') {
+          hits = lineArcIntersect(V(ej.v1), V(ej.v2), ei);
+          for (const h of hits) {
+            (lineSp.get(ej.id) || lineSp.set(ej.id,[]).get(ej.id)).push(h.t);
+            (arcSp.get(ei.id) || arcSp.set(ei.id,[]).get(ei.id)).push(h.s);
+            found = true;
+          }
+        } else if (ei.type === 'arc' && ej.type === 'arc') {
+          hits = arcArcIntersect(ei, ej);
+          for (const h of hits) {
+            (arcSp.get(ei.id) || arcSp.set(ei.id,[]).get(ei.id)).push(h.s1);
+            (arcSp.get(ej.id) || arcSp.set(ej.id,[]).get(ej.id)).push(h.s2);
+            found = true;
+          }
+        }
+      }
+    }
+    for (const [eid, ts] of lineSp) splitLineAt(eid, ts);
+    for (const [eid, ss] of arcSp) splitArcAt(eid, ss);
+    if (!found) return;
+  }
+  console.warn('resolveAllIntersections: max passes');
+}
+
+// ============================================================================
+// DRAWING COMMITS
+// ============================================================================
+function commitLine(x1,y1,x2,y2) {
+  if (Math.hypot(x2-x1, y2-y1) < EPS) return;
+  saveHistory();
+  const g = nextGroupId++;
+  addLineEdge(addVertex(x1,y1), addVertex(x2,y2), g);
+  resolveAllIntersections(); draw();
+}
+function commitRect(x1,y1,x2,y2) {
+  const lx=Math.min(x1,x2), ly=Math.min(y1,y2), hx=Math.max(x1,x2), hy=Math.max(y1,y2);
+  if ((hx-lx)<EPS && (hy-ly)<EPS) return;
+  saveHistory();
+  const g = nextGroupId++;
+  const a=addVertex(lx,ly), b=addVertex(hx,ly), c=addVertex(hx,hy), d=addVertex(lx,hy);
+  addLineEdge(a,b,g); addLineEdge(b,c,g); addLineEdge(c,d,g); addLineEdge(d,a,g);
+  resolveAllIntersections(); draw();
+}
+function commitCircle(cx,cy,r) {
+  if (r < EPS) return;
+  saveHistory();
+  const g = nextGroupId++;
+  const vR = addVertex(cx+r, cy), vL = addVertex(cx-r, cy);
+  addArcEdge(vR, vL, cx, cy, r, g);  // top half CCW
+  addArcEdge(vL, vR, cx, cy, r, g);  // bottom half CCW
+  groupPrimitives.set(g, {type:'circle', cx, cy, r});
+  groupIntact.add(g);
+  resolveAllIntersections(); draw();
+}
+function commitEllipse(cx,cy,rx,ry,segments=96) {
+  if (rx<EPS && ry<EPS) return;
+  saveHistory();
+  const g = nextGroupId++;
+  const vs = [];
+  for (let i=0; i<segments; i++) {
+    const a = TAU*i/segments;
+    vs.push(addVertex(cx+rx*Math.cos(a), cy+ry*Math.sin(a)));
+  }
+  for (let i=0; i<segments; i++) addLineEdge(vs[i], vs[(i+1)%segments], g);
+  resolveAllIntersections(); draw();
+}
+function commitPolyline(pts, closed) {
+  if (pts.length < 2) return;
+  saveHistory();
+  const g = nextGroupId++;
+  const vs = pts.map(p => addVertex(p.x, p.y));
+  for (let i=0; i<vs.length-1; i++) addLineEdge(vs[i], vs[i+1], g);
+  if (closed) addLineEdge(vs[vs.length-1], vs[0], g);
+  resolveAllIntersections(); draw();
+}
+function commitSpline(pts, closed, samples=24) {
+  if (pts.length < 2) return;
+  const segs = splineSegs(pts, closed);
+  const out = [];
+  for (const s of segs) {
+    for (let i=0; i<samples; i++) {
+      const t=i/samples, mt=1-t;
+      out.push({x: mt*mt*mt*s.from.x + 3*mt*mt*t*s.cp1.x + 3*mt*t*t*s.cp2.x + t*t*t*s.to.x,
+                y: mt*mt*mt*s.from.y + 3*mt*mt*t*s.cp1.y + 3*mt*t*t*s.cp2.y + t*t*t*s.to.y});
+    }
+  }
+  if (!closed) out.push({x: pts[pts.length-1].x, y: pts[pts.length-1].y});
+  commitPolyline(out, closed);
+}
+function splineSegs(pts, closed) {
+  const n = pts.length; if (n<2) return [];
+  const p = closed ? [pts[n-1],...pts,pts[0],pts[1]] : [pts[0],...pts,pts[n-1]];
+  const count = closed ? n : n-1, out = [];
+  for (let i=0; i<count; i++) {
+    const p0=p[i],p1=p[i+1],p2=p[i+2],p3=p[i+3];
+    out.push({from:p1, cp1:{x:p1.x+(p2.x-p0.x)/6, y:p1.y+(p2.y-p0.y)/6}, cp2:{x:p2.x-(p3.x-p1.x)/6, y:p2.y-(p3.y-p1.y)/6}, to:p2});
+  }
+  return out;
+}
+
+// ============================================================================
+// HIT TEST + SELECTION + SNAP
+// ============================================================================
+function distLineSeg(px,py, ax,ay, bx,by) {
+  const dx=bx-ax, dy=by-ay, l2=dx*dx+dy*dy;
+  if (!l2) return Math.hypot(px-ax, py-ay);
+  const t = Math.max(0, Math.min(1, ((px-ax)*dx + (py-ay)*dy) / l2));
+  return Math.hypot(px - (ax+t*dx), py - (ay+t*dy));
+}
+function distToEdge(wx,wy,e) {
+  if (e.type === 'line') { const a=V(e.v1), b=V(e.v2); return distLineSeg(wx,wy,a.x,a.y,b.x,b.y); }
+  const d = Math.hypot(wx-e.cx, wy-e.cy);
+  const {a1, sweep} = arcAngles(e);
+  const ang = Math.atan2(wy-e.cy, wx-e.cx);
+  let delta = ang-a1; while (delta<0) delta+=TAU; while (delta>=TAU) delta-=TAU;
+  if (delta <= sweep) return Math.abs(d - e.r);
+  const v1=V(e.v1), v2=V(e.v2);
+  return Math.min(Math.hypot(wx-v1.x, wy-v1.y), Math.hypot(wx-v2.x, wy-v2.y));
+}
+function hitEdgeAt(wx,wy, maxPx=7) {
+  const thr = maxPx / scale;
+  let best = null, bestD = thr;
+  for (const e of edges.values()) { const d = distToEdge(wx,wy,e); if (d<bestD) {bestD=d; best=e.id;} }
+  return best;
+}
+function edgesInChainOf(edgeId) {
+  const start = E(edgeId); if (!start) return new Set();
+  const result = new Set([edgeId]);
+  const vToEs = new Map();
+  for (const e of edges.values()) {
+    if (!vToEs.has(e.v1)) vToEs.set(e.v1, []);
+    if (!vToEs.has(e.v2)) vToEs.set(e.v2, []);
+    vToEs.get(e.v1).push(e); vToEs.get(e.v2).push(e);
+  }
+  const walk = (fromV, viaEdge) => {
+    let prev = viaEdge.id, cur = fromV;
+    while (true) {
+      const es = vToEs.get(cur) || [];
+      if (es.length !== 2) return;
+      const next = es[0].id === prev ? es[1] : es[0];
+      if (result.has(next.id)) return;
+      result.add(next.id);
+      prev = next.id;
+      cur = (next.v1 === cur) ? next.v2 : next.v1;
+    }
+  };
+  walk(start.v1, start); walk(start.v2, start);
+  return result;
+}
+function edgesInGroupOf(edgeId) {
+  const e0 = E(edgeId); if (!e0) return new Set();
+  const out = new Set();
+  for (const e of edges.values()) if (e.groupId === e0.groupId) out.add(e.id);
+  return out;
+}
+function clearSelection() { selectedEdgeIds.clear(); }
+function isSelected(id) { return selectedEdgeIds.has(id); }
+function deleteSelected() {
+  if (!selectedEdgeIds.size) return;
+  saveHistory();
+  for (const id of selectedEdgeIds) removeEdgeById(id);
+  selectedEdgeIds.clear(); hoverEdgeId = null; draw();
+}
+function selectAll() { selectedEdgeIds = new Set(edges.keys()); draw(); }
+
+function findSnap(wx,wy) {
+  const thr = 10 / scale;
+  let best = null;
+  for (const v of vertices.values()) {
+    const d = Math.hypot(v.x-wx, v.y-wy);
+    if (d < thr && (!best || d < best.d)) best = {type:'endpoint', x:v.x, y:v.y, d};
+  }
+  if (best) return best;
+  for (const e of edges.values()) {
+    let mx, my;
+    if (e.type === 'line') { const a=V(e.v1), b=V(e.v2); mx=(a.x+b.x)/2; my=(a.y+b.y)/2; }
+    else { const p = arcMidpoint(e); mx=p.x; my=p.y; }
+    const d = Math.hypot(mx-wx, my-wy);
+    if (d < thr && (!best || d < best.d)) best = {type:'midpoint', x:mx, y:my, d};
+  }
+  if (best) return best;
+  if (snapEnabled) { const g = gridSize; return {type:'grid', x:Math.round(wx/g)*g, y:Math.round(wy/g)*g}; }
+  return {type:'none', x:wx, y:wy};
+}
+function drawSnapIndicator() {
+  if (!activeSnap || tool === 'select') return;
+  const s = toS(activeSnap.x, activeSnap.y);
+  ctx.save();
+  if (activeSnap.type === 'endpoint') {
+    ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 2; ctx.fillStyle = 'rgba(22,163,74,.15)';
+    ctx.beginPath(); ctx.rect(s.x-6, s.y-6, 12, 12); ctx.fill(); ctx.stroke();
+  } else if (activeSnap.type === 'midpoint') {
+    ctx.strokeStyle = '#d97706'; ctx.lineWidth = 2; ctx.fillStyle = 'rgba(217,119,6,.15)';
+    ctx.beginPath();
+    ctx.moveTo(s.x, s.y-7); ctx.lineTo(s.x+7, s.y); ctx.lineTo(s.x, s.y+7); ctx.lineTo(s.x-7, s.y);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  } else {
+    ctx.fillStyle = '#3b82f6';
+    ctx.beginPath(); ctx.arc(s.x, s.y, 3, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+function applyOrthoFrom(rx, ry) {
+  const dx = mouse.x-rx, dy = mouse.y-ry;
+  if (Math.abs(dx) >= Math.abs(dy)) mouse.y = ry; else mouse.x = rx;
+}
+
+// ============================================================================
+// VALIDATION
+// ============================================================================
+function connectedComponents() {
+  const assigned = new Set(), out = [];
+  for (const vStart of vertices.keys()) {
+    if (assigned.has(vStart)) continue;
+    const compV = new Set(), compE = new Set();
+    const q = [vStart];
+    while (q.length) {
+      const v = q.shift();
+      if (compV.has(v)) continue;
+      compV.add(v); assigned.add(v);
+      for (const e of edges.values()) {
+        if (e.v1 === v || e.v2 === v) {
+          compE.add(e.id);
+          const other = e.v1 === v ? e.v2 : e.v1;
+          if (!compV.has(other)) q.push(other);
+        }
+      }
+    }
+    if (compE.size > 0) out.push({verts: Array.from(compV), edgeIds: Array.from(compE)});
+  }
+  return out;
+}
+function cycleWalk(component) {
+  const vToEs = new Map();
+  for (const eid of component.edgeIds) {
+    const e = E(eid);
+    if (!vToEs.has(e.v1)) vToEs.set(e.v1, []);
+    if (!vToEs.has(e.v2)) vToEs.set(e.v2, []);
+    vToEs.get(e.v1).push(e); vToEs.get(e.v2).push(e);
+  }
+  const startV = component.verts[0];
+  const n0 = vToEs.get(startV);
+  if (!n0 || n0.length !== 2) return null;
+  let prev = null, curV = startV;
+  const edgeSeq = [], vertSeq = [startV];
+  while (true) {
+    const nbrs = vToEs.get(curV);
+    if (!nbrs || nbrs.length !== 2) return null;
+    const next = nbrs[0].id === prev ? nbrs[1] : nbrs[0];
+    edgeSeq.push(next.id);
+    const nextV = (next.v1 === curV) ? next.v2 : next.v1;
+    if (nextV === startV) break;
+    vertSeq.push(nextV);
+    prev = next.id; curV = nextV;
+    if (edgeSeq.length > edges.size + 5) return null;
+  }
+  return {edgeSeq, vertSeq};
+}
+function cyclePoints(walk) {
+  const {edgeSeq, vertSeq} = walk;
+  const poly = [];
+  for (let i = 0; i < edgeSeq.length; i++) {
+    const sVid = vertSeq[i], sV = V(sVid);
+    poly.push({x: sV.x, y: sV.y});
+    const edge = E(edgeSeq[i]);
+    if (edge.type === 'arc') {
+      const eVid = (edge.v1 === sVid) ? edge.v2 : edge.v1;
+      const eV = V(eVid);
+      const aFrom = Math.atan2(sV.y-edge.cy, sV.x-edge.cx);
+      const aTo = Math.atan2(eV.y-edge.cy, eV.x-edge.cx);
+      const ccw = (edge.v1 === sVid);
+      let sweep;
+      if (ccw) { sweep = aTo - aFrom; while (sweep <= 0) sweep += TAU; }
+      else { let s2 = aFrom - aTo; while (s2 <= 0) s2 += TAU; sweep = -s2; }
+      const steps = Math.max(6, Math.ceil(Math.abs(sweep) / (Math.PI/8)));
+      for (let j = 1; j < steps; j++) {
+        const a = aFrom + sweep * (j/steps);
+        poly.push({x: edge.cx + edge.r*Math.cos(a), y: edge.cy + edge.r*Math.sin(a)});
+      }
+    }
+  }
+  return poly;
+}
+function pointInPolygon(px, py, poly) {
+  let inside = false;
+  for (let i=0, j=poly.length-1; i<poly.length; j=i++) {
+    const xi=poly[i].x, yi=poly[i].y, xj=poly[j].x, yj=poly[j].y;
+    if (((yi>py) !== (yj>py)) && px < ((xj-xi)*(py-yi)/(yj-yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+function polyBBox(poly) {
+  let x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity;
+  for (const p of poly) { if (p.x<x1) x1=p.x; if (p.y<y1) y1=p.y; if (p.x>x2) x2=p.x; if (p.y>y2) y2=p.y; }
+  return {x1,y1,x2,y2};
+}
+function validateGeometry() {
+  const errs = [];
+  if (edges.size === 0) { errs.push('No geometry to cut yet'); return {valid:false, errs}; }
+  let dang = 0, tj = 0;
+  for (const v of vertices.values()) { const d = vertexDegree(v.id); if (d === 1) dang++; else if (d > 2) tj++; }
+  if (dang > 0) errs.push(`${dang} open endpoint${dang>1?'s':''} — close the shape`);
+  if (tj > 0) errs.push(`${tj} crossing${tj>1?'s':''} — delete the extra segments`);
+  if (errs.length === 0) {
+    const comps = connectedComponents();
+    const cycles = [];
+    for (const c of comps) {
+      const w = cycleWalk(c);
+      if (!w) { errs.push('Shape is not a simple closed loop'); break; }
+      cycles.push(cyclePoints(w));
+    }
+    if (errs.length === 0 && cycles.length > 1) {
+      // Depth = number of other cycles that strictly contain this one.
+      // depth 0 = outer (level 1), depth 1 = hole (level 2), depth 2 = island (level 3), etc.
+      const bxs = cycles.map(polyBBox);
+      const depth = new Array(cycles.length).fill(0);
+      for (let i = 0; i < cycles.length; i++) {
+        for (let j = 0; j < cycles.length; j++) {
+          if (i === j) continue;
+          const bi = bxs[i], bj = bxs[j];
+          // Quick reject: if i's bbox isn't inside j's bbox, j can't contain i
+          if (bi.x1 < bj.x1 - 1e-9 || bi.y1 < bj.y1 - 1e-9 || bi.x2 > bj.x2 + 1e-9 || bi.y2 > bj.y2 + 1e-9) continue;
+          if (pointInPolygon(cycles[i][0].x, cycles[i][0].y, cycles[j])) depth[i]++;
+        }
+      }
+      const outers = depth.filter(d => d === 0).length;
+      if (outers !== 1) errs.push(`${outers} separate parts — draw one part at a time`);
+      else {
+        const maxDepth = Math.max(...depth);
+        if (maxDepth >= 2) errs.push(`Nested too deep (${maxDepth+1} layers) — remove innermost shape`);
+      }
+    }
+  }
+  return {valid: errs.length === 0, errs};
+}
+function refreshValidationUI() {
+  const pill = document.getElementById('validation-pill'), btn = document.getElementById('dl-btn');
+  if (edges.size === 0) {
+    pill.className = 'ok'; pill.style.background = '#f3f4f6'; pill.style.color = '#6b7280';
+    pill.textContent = '· Draw to begin';
+    btn.classList.add('disabled'); btn.title = 'Draw a closed shape first';
+    return;
+  }
+  pill.style.background = ''; pill.style.color = '';
+  const v = validateGeometry();
+  if (v.valid) { pill.className = 'ok'; pill.textContent = '✓ Ready to cut'; btn.classList.remove('disabled'); btn.title = 'Download DXF file'; }
+  else { pill.className = 'bad'; pill.textContent = '✕ ' + v.errs[0]; btn.classList.add('disabled'); btn.title = v.errs.join(' · '); }
+}
+
+// ============================================================================
+// HINT + RESIZE + IMAGE + SCALE CAL
+// ============================================================================
+let _ht = null;
+const hintEl = document.getElementById('hint');
+function showHint(msg, dur=5000) { hintEl.textContent = msg; hintEl.classList.remove('hide'); clearTimeout(_ht); if (dur>0) _ht = setTimeout(()=>hintEl.classList.add('hide'), dur); }
+function resize() {
+  const r = wrap.getBoundingClientRect();
+  canvas.width = r.width; canvas.height = r.height;
+  if (!panX && !panY) { panX = r.width/2; panY = r.height/2; }
+  draw();
+}
+new ResizeObserver(resize).observe(wrap);
+function loadImage(event) {
+  const f = event.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      imgObj = img; imgX = 0; imgY = 0; imgWorldW = 10; imgOpacity = 0.4; imgVisible = true;
+      document.getElementById('img-opacity').value = 0.4;
+      document.getElementById('img-world-w').value = 10;
+      document.getElementById('img-unit-label').textContent = units;
+      document.getElementById('img-panel').style.display = 'flex';
+      draw(); startScaleCalibrate();
+      showHint('Image loaded - click two points on it whose real distance you know, then enter that distance.', 0);
+    };
+    img.src = e.target.result;
+  };
+  rd.readAsDataURL(f); event.target.value = '';
+}
+function toggleImgVisible() { imgVisible = !imgVisible; document.getElementById('img-vis-btn').textContent = imgVisible ? 'Hide Image' : 'Show Image'; draw(); }
+function removeImage() { imgObj = null; imgDragging = false; document.getElementById('img-panel').style.display = 'none'; draw(); }
+function imgBoundsScreen() {
+  if (!imgObj) return null;
+  const sc = toS(imgX, imgY);
+  const sw = imgWorldW * scale, sh = sw * (imgObj.naturalHeight / imgObj.naturalWidth);
+  return {x: sc.x - sw/2, y: sc.y - sh/2, w: sw, h: sh};
+}
+function isOverImage(sx, sy) { const b = imgBoundsScreen(); if (!b) return false; return sx>=b.x && sx<=b.x+b.w && sy>=b.y && sy<=b.y+b.h; }
+function drawImageLayer() {
+  if (!imgObj || !imgVisible) return;
+  const b = imgBoundsScreen(); if (!b) return;
+  ctx.save(); ctx.globalAlpha = imgOpacity;
+  ctx.drawImage(imgObj, b.x, b.y, b.w, b.h);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = 'rgba(99,102,241,0.5)'; ctx.lineWidth = 1; ctx.setLineDash([6, 4]);
+  ctx.strokeRect(b.x, b.y, b.w, b.h); ctx.setLineDash([]);
+  ctx.restore();
+}
+function startScaleCalibrate() {
+  scaleCalMode = true; scalePt1=null; scalePt2=null; scaleScreenPt1=null; scaleScreenPt2=null;
+  document.getElementById('scale-box').style.display = 'none';
+  canvas.style.cursor = 'crosshair';
+  showHint('Click the first point on the image for scale calibration.', 0);
+  draw();
+}
+function cancelScale() {
+  scaleCalMode = false; scalePt1=null; scalePt2=null; scaleScreenPt1=null; scaleScreenPt2=null;
+  document.getElementById('scale-box').style.display = 'none';
+  canvas.style.cursor = 'crosshair'; hintEl.classList.add('hide'); draw();
+}
+function applyScale() {
+  const d = parseFloat(document.getElementById('scale-dist').value);
+  if (!d || d<=0 || !scaleScreenPt1 || !scaleScreenPt2) { alert('Please enter a valid distance.'); return; }
+  const pd = Math.hypot(scaleScreenPt2.x-scaleScreenPt1.x, scaleScreenPt2.y-scaleScreenPt1.y);
+  if (pd < 2) { alert('Points are too close together.'); return; }
+  const newScale = pd / d;
+  const factor = newScale / scale, scF = 1 / factor;
+  for (const v of vertices.values()) { v.x *= scF; v.y *= scF; }
+  for (const e of edges.values()) if (e.type === 'arc') { e.cx *= scF; e.cy *= scF; e.r *= scF; }
+  for (const [, p] of groupPrimitives) { if (p.cx !== undefined) { p.cx *= scF; p.cy *= scF; } if (p.r !== undefined) p.r *= scF; if (p.rx !== undefined) { p.rx *= scF; p.ry *= scF; } }
+  imgX /= factor; imgY /= factor; imgWorldW /= factor;
+  scale = newScale;
+  document.getElementById('img-world-w').value = parseFloat(imgWorldW.toFixed(3));
+  cancelScale();
+  showHint(`Scale set: ${fmtN(d)} ${units} between points.`, 4000);
+}
+function handleScaleClick(sx, sy, wx, wy) {
+  if (!scalePt1) {
+    scalePt1 = {x:wx, y:wy}; scaleScreenPt1 = {x:sx, y:sy};
+    showHint('Now click the second point.', 0); draw();
+  } else if (!scalePt2) {
+    scalePt2 = {x:wx, y:wy}; scaleScreenPt2 = {x:sx, y:sy};
+    const mx = (scaleScreenPt1.x + scaleScreenPt2.x)/2, my = (scaleScreenPt1.y + scaleScreenPt2.y)/2;
+    const box = document.getElementById('scale-box');
+    const wr = wrap.getBoundingClientRect();
+    box.style.left = Math.min(Math.max(mx-110, 8), wr.width-240) + 'px';
+    box.style.top = Math.min(Math.max(my+16, 8), wr.height-100) + 'px';
+    box.style.display = 'block';
+    document.getElementById('scale-unit-label').textContent = units;
+    document.getElementById('scale-dist').value = '';
+    document.getElementById('scale-dist').focus();
+    document.getElementById('scale-dist').onkeydown = ev => { if (ev.key === 'Enter') applyScale(); if (ev.key === 'Escape') cancelScale(); };
+    hintEl.classList.add('hide'); draw();
+  }
+}
+
+// ============================================================================
+// RENDERING
+// ============================================================================
+function renderEdge(e, stroke, lw) {
+  ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.setLineDash([]);
+  if (e.type === 'line') {
+    const a = V(e.v1), b = V(e.v2);
+    const sa = toS(a.x, a.y), sb = toS(b.x, b.y);
+    ctx.beginPath(); ctx.moveTo(sa.x, sa.y); ctx.lineTo(sb.x, sb.y); ctx.stroke();
+  } else {
+    const v1 = V(e.v1), v2 = V(e.v2);
+    const a1 = Math.atan2(v1.y-e.cy, v1.x-e.cx);
+    const a2 = Math.atan2(v2.y-e.cy, v2.x-e.cx);
+    const sc = toS(e.cx, e.cy);
+    ctx.beginPath();
+    ctx.arc(sc.x, sc.y, e.r*scale, -a1, -a2, true);
+    ctx.stroke();
+  }
+}
+function drawBadVertexMarkers() {
+  for (const v of vertices.values()) {
+    const deg = vertexDegree(v.id);
+    if (deg === 0 || deg === 2) continue;
+    const s = toS(v.x, v.y);
+    ctx.save();
+    if (deg === 1) {
+      ctx.fillStyle = '#dc2626'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(s.x, s.y, 6, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 9px -apple-system,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('!', s.x, s.y);
+    } else {
+      ctx.fillStyle = '#f59e0b'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(s.x, s.y, 7, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 9px -apple-system,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(deg), s.x, s.y);
+    }
+    ctx.restore();
+  }
+}
+// Dimension helpers
+function arH(x,y,d){ctx.save();ctx.fillStyle='#3b82f6';ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+d*7,y-3);ctx.lineTo(x+d*7,y+3);ctx.closePath();ctx.fill();ctx.restore();}
+function arV(x,y,d){ctx.save();ctx.fillStyle='#3b82f6';ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-3,y+d*7);ctx.lineTo(x+3,y+d*7);ctx.closePath();ctx.fill();ctx.restore();}
+function dimH(sx1,sy,sx2,label,above=true){
+  if (Math.abs(sx2-sx1)<12) return;
+  const y = sy + (above?-20:20);
+  ctx.save();
+  ctx.strokeStyle='#3b82f6'; ctx.fillStyle='#1d4ed8'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(sx1,sy); ctx.lineTo(sx1,y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sx2,sy); ctx.lineTo(sx2,y); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(sx1,y); ctx.lineTo(sx2,y); ctx.stroke();
+  arH(sx1,y,1); arH(sx2,y,-1);
+  ctx.font='bold 11px -apple-system,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  const tw = ctx.measureText(label).width, lx = (sx1+sx2)/2;
+  ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fillRect(lx-tw/2-3, y-8, tw+6, 16);
+  ctx.fillStyle='#1d4ed8'; ctx.fillText(label, lx, y);
+  ctx.restore();
+}
+function dimV(sx,sy1,sy2,label){
+  if (Math.abs(sy2-sy1)<12) return;
+  const x = sx + 24;
+  ctx.save();
+  ctx.strokeStyle='#3b82f6'; ctx.fillStyle='#1d4ed8'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(sx,sy1); ctx.lineTo(x,sy1); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sx,sy2); ctx.lineTo(x,sy2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(x,sy1); ctx.lineTo(x,sy2); ctx.stroke();
+  arV(x,sy1,1); arV(x,sy2,-1);
+  ctx.save(); ctx.translate(x+14, (sy1+sy2)/2); ctx.rotate(-Math.PI/2);
+  const tw = ctx.measureText(label).width;
+  ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fillRect(-tw/2-3,-8,tw+6,16);
+  ctx.fillStyle='#1d4ed8'; ctx.fillText(label, 0, 0);
+  ctx.restore(); ctx.restore();
+}
+function dimDiag(sx1,sy1,sx2,sy2,label){
+  const len = Math.hypot(sx2-sx1, sy2-sy1);
+  if (len < 12) return;
+  const nx = -(sy2-sy1)/len*22, ny = (sx2-sx1)/len*22;
+  ctx.save();
+  ctx.strokeStyle='#3b82f6'; ctx.fillStyle='#1d4ed8'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(sx1,sy1); ctx.lineTo(sx1+nx,sy1+ny); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sx2,sy2); ctx.lineTo(sx2+nx,sy2+ny); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(sx1+nx,sy1+ny); ctx.lineTo(sx2+nx,sy2+ny); ctx.stroke();
+  ctx.font='bold 11px -apple-system,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  const lx = (sx1+sx2)/2 + nx, ly = (sy1+sy2)/2 + ny, tw = ctx.measureText(label).width;
+  ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fillRect(lx-tw/2-3, ly-8, tw+6, 16);
+  ctx.fillStyle='#1d4ed8'; ctx.fillText(label, lx, ly);
+  ctx.restore();
+}
+function annotate(x1,y1,x2,y2){
+  const len = Math.hypot(x2-x1, y2-y1); if (len < 1e-6) return;
+  const sa = toS(x1,y1), sb = toS(x2,y2);
+  const isH = Math.abs(y2-y1) < 0.001*len, isV = Math.abs(x2-x1) < 0.001*len;
+  if (isH) dimH(sa.x, (sa.y+sb.y)/2, sb.x, fmtN(len));
+  else if (isV) dimV((sa.x+sb.x)/2, sa.y, sb.y, fmtN(len));
+  else dimDiag(sa.x, sa.y, sb.x, sb.y, fmtN(len));
+}
+function annotateRect(x1,y1,x2,y2){
+  const w = Math.abs(x2-x1), h = Math.abs(y2-y1);
+  if (!w && !h) return;
+  const sx1 = toS(Math.min(x1,x2), 0).x, sx2 = toS(Math.max(x1,x2), 0).x;
+  const sy1 = toS(0, Math.max(y1,y2)).y, sy2 = toS(0, Math.min(y1,y2)).y;
+  if (w > 1e-6) dimH(sx1, sy1, sx2, fmtN(w), true);
+  if (h > 1e-6) dimV(toS(Math.max(x1,x2), 0).x, sy1, sy2, fmtN(h));
+}
+function annotateCircle(cx,cy,r){
+  if (r < 1e-6) return;
+  const c = toS(cx,cy), rs = r*scale, label = '⌀' + fmtN(r*2);
+  ctx.save();
+  ctx.strokeStyle='#3b82f6'; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(c.x-rs-8, c.y); ctx.lineTo(c.x+rs+8, c.y); ctx.stroke();
+  ctx.setLineDash([]);
+  [[c.x-rs],[c.x+rs]].forEach(([x])=>{ ctx.beginPath(); ctx.moveTo(x, c.y-5); ctx.lineTo(x, c.y+5); ctx.stroke(); });
+  ctx.font='bold 11px -apple-system,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='bottom';
+  const tw = ctx.measureText(label).width;
+  ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fillRect(c.x-tw/2-3, c.y-rs-20, tw+6, 16);
+  ctx.fillStyle='#1d4ed8'; ctx.fillText(label, c.x, c.y-rs-4);
+  ctx.restore();
+}
+function annotateEllipse(cx,cy,rx,ry){
+  if (rx<1e-6 && ry<1e-6) return;
+  const sx1 = toS(cx-rx,0).x, sx2 = toS(cx+rx,0).x;
+  const sy1 = toS(0,cy+ry).y, sy2 = toS(0,cy-ry).y;
+  const scx = toS(cx,0).x, scy = toS(0,cy).y;
+  if (rx > 1e-6) dimH(sx1, scy, sx2, fmtN(rx*2), false);
+  if (ry > 1e-6) dimV(scx, sy1, sy2, fmtN(ry*2));
+}
+function drawBBox() {
+  const bb = allBBox(); if (!bb) return;
+  const mg = Math.max(gridSize*0.3, 0.02);
+  const sa = toS(bb.x1-mg, bb.y1-mg), sb = toS(bb.x2+mg, bb.y2+mg);
+  const bx = Math.min(sa.x, sb.x), by = Math.min(sa.y, sb.y);
+  const bw = Math.abs(sb.x-sa.x), bh = Math.abs(sb.y-sa.y);
+  ctx.save();
+  ctx.strokeStyle='#f97316'; ctx.lineWidth=1.2; ctx.setLineDash([8,5]);
+  ctx.strokeRect(bx, by, bw, bh); ctx.setLineDash([]);
+  ctx.font='bold 11px -apple-system,sans-serif'; ctx.fillStyle='#f97316';
+  const w = bb.x2-bb.x1, h = bb.y2-bb.y1;
+  if (w > 1e-6) {
+    ctx.textAlign='center'; ctx.textBaseline='bottom';
+    const lx = bx+bw/2, tw = ctx.measureText('W: '+fmtN(w)).width;
+    ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fillRect(lx-tw/2-3, by-17, tw+6, 14);
+    ctx.fillStyle='#f97316'; ctx.fillText('W: '+fmtN(w), lx, by-3);
+  }
+  if (h > 1e-6) {
+    ctx.save(); ctx.translate(bx+bw+6+14, (by+by+bh)/2); ctx.rotate(-Math.PI/2);
+    const hl = 'H: '+fmtN(h), tw = ctx.measureText(hl).width;
+    ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fillRect(-tw/2-3,-8,tw+6,15);
+    ctx.fillStyle='#f97316'; ctx.fillText(hl, 0, 0);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function drawErrorBanner() {
+  if (edges.size === 0) return;
+  const v = validateGeometry();
+  if (v.valid) return;
+  const bb = allBBox();
+  if (!bb) return;
+  const mg = Math.max(gridSize * 0.3, 0.02);
+  const centerWorld = toS((bb.x1 + bb.x2) / 2, bb.y1 - mg);
+  const y = centerWorld.y + 22;
+  const msg = '⚠  ' + v.errs[0];
+  ctx.save();
+  ctx.font = 'bold 13px -apple-system,sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const tw = ctx.measureText(msg).width;
+  // soft white halo so it stays legible even against busy geometry
+  ctx.shadowColor = 'rgba(255,255,255,.9)'; ctx.shadowBlur = 8;
+  ctx.fillStyle = 'rgba(220,38,38,.95)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(centerWorld.x - tw/2 - 14, y - 14, tw + 28, 28, 7);
+  else ctx.rect(centerWorld.x - tw/2 - 14, y - 14, tw + 28, 28);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#fff';
+  ctx.fillText(msg, centerWorld.x, y);
+  ctx.restore();
+}
+function findArcPrimitiveAt(wx, wy) {
+  const id = hitEdgeAt(wx, wy, 10);
+  if (id === null) return null;
+  const e = E(id);
+  if (e.type !== 'arc') return null;
+  const prim = groupPrimitives.get(e.groupId);
+  if (!prim || prim.type !== 'circle') return null;
+  return {groupId: e.groupId, prim};
+}
+function executeBreak(groupId, startAng, endAng) {
+  const prim = groupPrimitives.get(groupId); if (!prim) return;
+  let sweep = endAng - startAng;
+  while (sweep <= 0) sweep += TAU;
+  if (sweep < 1e-6 || sweep > TAU - 1e-6) return;
+  saveHistory();
+  groupIntact.delete(groupId);
+  const ids = [];
+  for (const e of edges.values()) if (e.groupId === groupId && e.type === 'arc') ids.push(e.id);
+  for (const eid of ids) {
+    const e = edges.get(eid); if (!e) continue;
+    const sParams = [];
+    for (const ang of [startAng, endAng]) {
+      const px = prim.cx + prim.r*Math.cos(ang), py = prim.cy + prim.r*Math.sin(ang);
+      const s = arcParamFor(px, py, e);
+      if (s !== null && s > 1e-6 && s < 1 - 1e-6) sParams.push(s);
+    }
+    if (sParams.length) splitArcAt(eid, sParams);
+  }
+  const rem = [];
+  for (const e of edges.values()) {
+    if (e.groupId !== groupId || e.type !== 'arc') continue;
+    const m = arcMidpoint(e);
+    const ang = Math.atan2(m.y-prim.cy, m.x-prim.cx);
+    let delta = ang - startAng;
+    while (delta < 0) delta += TAU;
+    while (delta >= TAU) delta -= TAU;
+    if (delta > 1e-6 && delta < sweep - 1e-6) rem.push(e.id);
+  }
+  for (const id of rem) removeEdgeById(id);
+  breakTargetGroup = null; breakFirstAngle = null;
+  draw();
+}
+function drawBreakPreview() {
+  if (tool !== 'break' || breakTargetGroup === null) return;
+  const prim = groupPrimitives.get(breakTargetGroup); if (!prim) return;
+  const sc = toS(prim.cx, prim.cy);
+  const secondAng = Math.atan2(mouse.y-prim.cy, mouse.x-prim.cx);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(220,38,38,.85)'; ctx.lineWidth = 3; ctx.setLineDash([5,4]);
+  ctx.beginPath(); ctx.arc(sc.x, sc.y, prim.r*scale, -breakFirstAngle, -secondAng, true); ctx.stroke();
+  ctx.setLineDash([]);
+  const p1x = prim.cx + prim.r*Math.cos(breakFirstAngle), p1y = prim.cy + prim.r*Math.sin(breakFirstAngle);
+  const sp1 = toS(p1x, p1y);
+  ctx.fillStyle = '#dc2626';
+  ctx.beginPath(); ctx.arc(sp1.x, sp1.y, 5, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+// ============================================================================
+// MAIN DRAW
+// ============================================================================
+function draw() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H); ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,W,H);
+  const gpx = gridSize * scale;
+  if (gpx >= 5) {
+    ctx.strokeStyle = '#e0e4e8'; ctx.lineWidth = 1;
+    const ox = ((panX%gpx)+gpx)%gpx, oy = ((panY%gpx)+gpx)%gpx;
+    ctx.beginPath();
+    for (let x=ox; x<W; x+=gpx) { ctx.moveTo(x,0); ctx.lineTo(x,H); }
+    for (let y=oy; y<H; y+=gpx) { ctx.moveTo(0,y); ctx.lineTo(W,y); }
+    ctx.stroke();
+  }
+  ctx.strokeStyle = '#ced4da'; ctx.lineWidth = 1;
+  const o = toS(0,0);
+  ctx.beginPath(); ctx.moveTo(o.x, 0); ctx.lineTo(o.x, H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, o.y); ctx.lineTo(W, o.y); ctx.stroke();
+  drawBBox(); drawImageLayer();
+
+  if (scaleCalMode) {
+    if (scaleScreenPt1) {
+      ctx.save(); ctx.fillStyle='#7c3aed';
+      ctx.beginPath(); ctx.arc(scaleScreenPt1.x, scaleScreenPt1.y, 5, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+    if (scaleScreenPt1 && scaleScreenPt2) {
+      ctx.save();
+      ctx.strokeStyle='#7c3aed'; ctx.lineWidth=1.5; ctx.setLineDash([5,3]);
+      ctx.beginPath(); ctx.moveTo(scaleScreenPt1.x, scaleScreenPt1.y); ctx.lineTo(scaleScreenPt2.x, scaleScreenPt2.y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='#7c3aed'; ctx.beginPath(); ctx.arc(scaleScreenPt2.x, scaleScreenPt2.y, 5, 0, TAU); ctx.fill();
+      ctx.restore();
+    } else if (scaleScreenPt1) {
+      const m2 = toS(mouse.x, mouse.y);
+      ctx.save();
+      ctx.strokeStyle='#7c3aed'; ctx.lineWidth=1.5; ctx.setLineDash([5,3]);
+      ctx.beginPath(); ctx.moveTo(scaleScreenPt1.x, scaleScreenPt1.y); ctx.lineTo(m2.x, m2.y); ctx.stroke();
+      ctx.setLineDash([]); ctx.restore();
+    }
+  }
+
+  for (const e of edges.values()) {
+    let stroke = '#1a1a1a', lw = 1.5;
+    if (isSelected(e.id)) { stroke = '#3b82f6'; lw = 2.8; }
+    else if (e.id === hoverEdgeId && tool === 'select') { stroke = '#93c5fd'; lw = 2.2; }
+    renderEdge(e, stroke, lw);
+  }
+  drawBadVertexMarkers();
+  drawBreakPreview();
+
+  if (tool === 'measure') {
+    const s = toS(mouse.x, mouse.y);
+    ctx.fillStyle='#16a34a'; ctx.beginPath(); ctx.arc(s.x, s.y, 4, 0, TAU); ctx.fill();
+    if (measurePt1) {
+      const p1s = toS(measurePt1.x, measurePt1.y);
+      ctx.save(); ctx.fillStyle='#16a34a'; ctx.beginPath(); ctx.arc(p1s.x, p1s.y, 5, 0, TAU); ctx.fill(); ctx.restore();
+      const endPt = measurePt2 || mouse;
+      const p2s = toS(endPt.x, endPt.y);
+      ctx.save();
+      ctx.strokeStyle='#16a34a'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
+      ctx.beginPath(); ctx.moveTo(p1s.x, p1s.y); ctx.lineTo(p2s.x, p2s.y); ctx.stroke();
+      ctx.setLineDash([]);
+      if (measurePt2) { ctx.fillStyle='#16a34a'; ctx.beginPath(); ctx.arc(p2s.x, p2s.y, 5, 0, TAU); ctx.fill(); }
+      ctx.restore();
+      const dist = Math.hypot(endPt.x-measurePt1.x, endPt.y-measurePt1.y);
+      const dx = endPt.x-measurePt1.x, dy = endPt.y-measurePt1.y;
+      const mx2 = (p1s.x+p2s.x)/2, my2 = (p1s.y+p2s.y)/2;
+      const len2 = Math.hypot(p2s.x-p1s.x, p2s.y-p1s.y);
+      const nx = len2>0 ? -(p2s.y-p1s.y)/len2 : 0;
+      const ny = len2>0 ? (p2s.x-p1s.x)/len2 : 1;
+      const lx = mx2+nx*22, ly = my2+ny*22;
+      let label = fmtN(dist)+' '+units;
+      if (Math.abs(dx)>1e-6 && Math.abs(dy)>1e-6) label += `  (${fmtN(Math.abs(dx))} × ${fmtN(Math.abs(dy))})`;
+      ctx.save();
+      ctx.font='bold 12px -apple-system,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      const tw = ctx.measureText(label).width;
+      ctx.fillStyle='rgba(22,163,74,.95)';
+      ctx.beginPath(); ctx.roundRect(lx-tw/2-5, ly-10, tw+10, 20, 4); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.fillText(label, lx, ly);
+      ctx.restore();
+      const out = document.getElementById('measure-out');
+      out.style.display = 'inline';
+      out.textContent = `📏 ${fmtN(dist)} ${units}${Math.abs(dx)>1e-6&&Math.abs(dy)>1e-6?` (${fmtN(Math.abs(dx))} × ${fmtN(Math.abs(dy))})` :''}`;
+    }
+  } else if (tool !== 'select' && tool !== 'break') {
+    ctx.setLineDash([6,4]);
+    if (tool === 'line' && startPt) {
+      ctx.strokeStyle='#f97316'; ctx.lineWidth=1.5;
+      const sa = toS(startPt.x, startPt.y), sb = toS(mouse.x, mouse.y);
+      ctx.beginPath(); ctx.moveTo(sa.x, sa.y); ctx.lineTo(sb.x, sb.y); ctx.stroke();
+      ctx.setLineDash([]);
+      if (Math.hypot(mouse.x-startPt.x, mouse.y-startPt.y) > gridSize*.5) annotate(startPt.x, startPt.y, mouse.x, mouse.y);
+    }
+    if (tool === 'rect' && startPt) {
+      ctx.strokeStyle='#f97316'; ctx.lineWidth=1.5;
+      const sa = toS(startPt.x, startPt.y), sb = toS(mouse.x, mouse.y);
+      ctx.beginPath(); ctx.rect(Math.min(sa.x,sb.x), Math.min(sa.y,sb.y), Math.abs(sb.x-sa.x), Math.abs(sb.y-sa.y)); ctx.stroke();
+      ctx.setLineDash([]);
+      annotateRect(startPt.x, startPt.y, mouse.x, mouse.y);
+    }
+    if (tool === 'circle' && startPt) {
+      const r = Math.hypot(mouse.x-startPt.x, mouse.y-startPt.y);
+      ctx.strokeStyle='#f97316'; ctx.lineWidth=1.5;
+      const c = toS(startPt.x, startPt.y);
+      ctx.beginPath(); ctx.arc(c.x, c.y, r*scale, 0, TAU); ctx.stroke();
+      ctx.setLineDash([]);
+      if (r > gridSize*.5) annotateCircle(startPt.x, startPt.y, r);
+    }
+    if (tool === 'ellipse' && startPt) {
+      const rx = Math.abs(mouse.x-startPt.x), ry = Math.abs(mouse.y-startPt.y);
+      ctx.strokeStyle='#f97316'; ctx.lineWidth=1.5;
+      const c = toS(startPt.x, startPt.y);
+      ctx.beginPath(); ctx.ellipse(c.x, c.y, Math.abs(rx*scale), Math.abs(ry*scale), 0, 0, TAU); ctx.stroke();
+      ctx.setLineDash([]);
+      if (rx > gridSize*.5 || ry > gridSize*.5) annotateEllipse(startPt.x, startPt.y, rx, ry);
+    }
+    if (tool === 'polyline' && polyPts.length) {
+      ctx.strokeStyle='#f97316'; ctx.lineWidth=1.5;
+      const pts = [...polyPts, mouse];
+      ctx.beginPath();
+      const s0 = toS(pts[0].x, pts[0].y);
+      ctx.moveTo(s0.x, s0.y);
+      for (let i = 1; i < pts.length; i++) { const s = toS(pts[i].x, pts[i].y); ctx.lineTo(s.x, s.y); }
+      ctx.stroke(); ctx.setLineDash([]);
+      if (pts.length >= 2) {
+        const a = pts[pts.length-2], b = pts[pts.length-1];
+        if (Math.hypot(b.x-a.x, b.y-a.y) > gridSize*.5) annotate(a.x, a.y, b.x, b.y);
+      }
+      ctx.fillStyle='#f97316';
+      polyPts.forEach(p => { const s = toS(p.x, p.y); ctx.beginPath(); ctx.arc(s.x, s.y, 4, 0, TAU); ctx.fill(); });
+      if (polyPts.length >= 3) {
+        const f = toS(polyPts[0].x, polyPts[0].y);
+        ctx.save(); ctx.strokeStyle='rgba(249,115,22,.5)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+        ctx.beginPath(); ctx.arc(f.x, f.y, 11, 0, TAU); ctx.stroke(); ctx.restore();
+      }
+    }
+    if (tool === 'spline' && polyPts.length) {
+      const pts = [...polyPts, mouse];
+      ctx.strokeStyle='#f97316'; ctx.lineWidth=1.5; ctx.setLineDash([]);
+      const segs = splineSegs(pts, false);
+      if (segs.length) {
+        const s0 = toS(segs[0].from.x, segs[0].from.y);
+        ctx.beginPath(); ctx.moveTo(s0.x, s0.y);
+        for (const seg of segs) {
+          const c1 = toS(seg.cp1.x, seg.cp1.y), c2 = toS(seg.cp2.x, seg.cp2.y), en = toS(seg.to.x, seg.to.y);
+          ctx.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, en.x, en.y);
+        }
+        ctx.stroke();
+      }
+      ctx.fillStyle='#f97316';
+      polyPts.forEach(p => { const s = toS(p.x, p.y); ctx.beginPath(); ctx.arc(s.x, s.y, 4, 0, TAU); ctx.fill(); });
+      if (polyPts.length >= 3) {
+        const f = toS(polyPts[0].x, polyPts[0].y);
+        ctx.save(); ctx.strokeStyle='rgba(249,115,22,.5)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+        ctx.beginPath(); ctx.arc(f.x, f.y, 11, 0, TAU); ctx.stroke(); ctx.restore();
+      }
+    }
+    ctx.setLineDash([]);
+    drawSnapIndicator();
+  } else {
+    const s = toS(mouse.x, mouse.y);
+    ctx.fillStyle='#3b82f6'; ctx.beginPath(); ctx.arc(s.x, s.y, 3, 0, TAU); ctx.fill();
+  }
+
+  document.getElementById('entity-count').textContent = `${edges.size} edge${edges.size===1?'':'s'}`;
+  refreshValidationUI();
+  drawErrorBanner();
+}
+
+// ============================================================================
+// INPUT
+// ============================================================================
+function getMouse(e) {
+  const r = canvas.getBoundingClientRect();
+  return {x: (e.touches?e.touches[0].clientX:e.clientX)-r.left, y: (e.touches?e.touches[0].clientY:e.clientY)-r.top};
+}
+function dToFirst(sx, sy) {
+  if (!polyPts.length) return Infinity;
+  const s = toS(polyPts[0].x, polyPts[0].y);
+  return Math.hypot(sx-s.x, sy-s.y);
+}
+// ============================================================================
+// TYPE-TO-SIZE — dynamic dimension entry while drawing (line / rect / circle).
+// After the first click you can type exact values; the floating box overrides
+// `mouse` with the typed endpoint, so the existing preview + commit paths work
+// unchanged. Mouse-only drawing is untouched — the box is purely additive.
+// ============================================================================
+const dynEl = document.getElementById('dyn');
+let dynActive = false, dynFields = {}, circleMode = 'r', lastRawMouse = {x:0,y:0};
+
+function fmtDyn(n){ const s = units==='mm' ? n.toFixed(2) : n.toFixed(3); return s.replace(/\.?0+$/,''); }
+function dynFieldHTML(k,label){ return '<label class="dyn-f">'+(label?'<span>'+label+'</span>':'')+'<input data-k="'+k+'" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"></label>'; }
+
+function showDyn(clientX, clientY){
+  let html;
+  if (tool==='line') html = dynFieldHTML('len','Len') + '<span class="dyn-sep">·</span>' + dynFieldHTML('ang','∠°');
+  else if (tool==='rect') html = dynFieldHTML('w','W') + '<span class="dyn-sep">×</span>' + dynFieldHTML('h','H');
+  else if (tool==='circle') html = '<button type="button" class="dyn-tog" id="dyn-rd">'+(circleMode==='d'?'⌀':'R')+'</button>' + dynFieldHTML('r','');
+  else return;
+  html += '<span class="dyn-hint">↵ set</span>';
+  dynEl.innerHTML = html;
+  dynFields = {};
+  dynEl.querySelectorAll('input').forEach(inp => { dynFields[inp.dataset.k] = inp; wireDyn(inp); });
+  const tog = document.getElementById('dyn-rd');
+  if (tog) tog.onclick = () => { circleMode = circleMode==='r'?'d':'r'; tog.textContent = circleMode==='d'?'⌀':'R'; updateDynPlaceholders(); if (applyTypedOverride()) draw(); if (dynFields.r) dynFields.r.focus(); };
+  dynEl.style.left = Math.min(clientX + 18, window.innerWidth - 215) + 'px';
+  dynEl.style.top  = Math.min(clientY + 18, window.innerHeight - 52) + 'px';
+  dynEl.style.display = 'flex';
+  dynActive = true;
+  updateDynPlaceholders();
+  const first = dynEl.querySelector('input'); if (first) first.focus();
+}
+function hideDyn(){ if (!dynActive) return; dynEl.style.display = 'none'; dynEl.innerHTML = ''; dynActive = false; dynFields = {}; }
+
+function dynTypedVal(k){ const inp = dynFields[k]; if (!inp) return null; const v = parseFloat(inp.value); return isFinite(v) ? v : null; }
+
+// Override global `mouse` from the typed values, using the last real cursor
+// position for direction/quadrant. Returns true if it applied.
+function applyTypedOverride(){
+  if (!dynActive || !drawing || !startPt) return false;
+  if (tool==='line'){
+    const len = dynTypedVal('len'); if (len===null || len<=0) return false;
+    const ang = dynTypedVal('ang');
+    let dx, dy;
+    if (ang!==null){ const t = ang*Math.PI/180; dx = Math.cos(t); dy = Math.sin(t); }
+    else { dx = lastRawMouse.x-startPt.x; dy = lastRawMouse.y-startPt.y; const d = Math.hypot(dx,dy)||1; dx/=d; dy/=d; }
+    mouse = {x: startPt.x + len*dx, y: startPt.y + len*dy};
+    return true;
+  }
+  if (tool==='rect'){
+    const w = dynTypedVal('w'), h = dynTypedVal('h');
+    if (w===null && h===null) return false;
+    let ex = lastRawMouse.x, ey = lastRawMouse.y;
+    if (w!==null){ const sx = Math.sign(lastRawMouse.x-startPt.x)||1; ex = startPt.x + sx*Math.abs(w); }
+    if (h!==null){ const sy = Math.sign(lastRawMouse.y-startPt.y)||1; ey = startPt.y + sy*Math.abs(h); }
+    mouse = {x: ex, y: ey};
+    return true;
+  }
+  if (tool==='circle'){
+    let r = dynTypedVal('r'); if (r===null || r<=0) return false;
+    if (circleMode==='d') r = r/2;
+    let dx = lastRawMouse.x-startPt.x, dy = lastRawMouse.y-startPt.y; const d = Math.hypot(dx,dy)||1; dx/=d; dy/=d;
+    mouse = {x: startPt.x + r*dx, y: startPt.y + r*dy};
+    return true;
+  }
+  return false;
+}
+function updateDynPlaceholders(){
+  if (!dynActive || !startPt) return;
+  if (tool==='line' && dynFields.len){
+    dynFields.len.placeholder = fmtDyn(Math.hypot(lastRawMouse.x-startPt.x, lastRawMouse.y-startPt.y));
+    if (dynFields.ang){ const a = Math.atan2(lastRawMouse.y-startPt.y, lastRawMouse.x-startPt.x)*180/Math.PI; dynFields.ang.placeholder = a.toFixed(0); }
+  } else if (tool==='rect'){
+    if (dynFields.w) dynFields.w.placeholder = fmtDyn(Math.abs(lastRawMouse.x-startPt.x));
+    if (dynFields.h) dynFields.h.placeholder = fmtDyn(Math.abs(lastRawMouse.y-startPt.y));
+  } else if (tool==='circle' && dynFields.r){
+    let r = Math.hypot(lastRawMouse.x-startPt.x, lastRawMouse.y-startPt.y); if (circleMode==='d') r *= 2;
+    dynFields.r.placeholder = fmtDyn(r);
+  }
+}
+function commitTyped(){
+  if (!drawing || !startPt) return;
+  if (!applyTypedOverride()) return; // nothing valid typed → let a click place it instead
+  const sp = startPt; drawing = false; startPt = null; hideDyn();
+  if (tool==='line') commitLine(sp.x, sp.y, mouse.x, mouse.y);
+  else if (tool==='rect') commitRect(sp.x, sp.y, mouse.x, mouse.y);
+  else if (tool==='circle') commitCircle(sp.x, sp.y, Math.hypot(mouse.x-sp.x, mouse.y-sp.y));
+}
+function wireDyn(inp){
+  inp.addEventListener('input', () => { if (applyTypedOverride()) draw(); });
+  inp.addEventListener('keydown', ev => {
+    if (ev.key==='Enter'){ ev.preventDefault(); commitTyped(); }
+    else if (ev.key==='Escape'){ ev.preventDefault(); drawing = false; startPt = null; hideDyn(); draw(); }
+  });
+}
+
+// Dynamic input: while a shape is being drawn you can just START TYPING a number
+// anywhere (no need to click the box). The first digit/decimal/minus is routed
+// into the first field and focused; the shape snaps to that size live. Enter
+// commits, Esc cancels — from anywhere. Registered before the shortcut handler
+// (source order) so it sees the key first; digits aren't shortcuts so there's
+// no conflict.
+document.addEventListener('keydown', e => {
+  if (!dynActive || !drawing) return;
+  if (e.target && e.target.closest && e.target.closest('#dyn')) return; // already typing in a field — let it be
+  if (e.key === 'Enter') { e.preventDefault(); commitTyped(); return; }
+  if (e.key === 'Escape') { e.preventDefault(); drawing = false; startPt = null; hideDyn(); draw(); return; }
+  if (e.key === 'Tab') return; // let Tab move between fields normally
+  if (/^[0-9.\-]$/.test(e.key)) {
+    const f = dynEl.querySelector('input');
+    if (!f) return;
+    e.preventDefault();
+    f.focus();
+    f.value += e.key;
+    if (applyTypedOverride()) draw();
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  const m = getMouse(e); mouseRaw = {x:m.x, y:m.y};
+  if (isPanning) {
+    panX = panOrigin.x + (m.x-panStart.x); panY = panOrigin.y + (m.y-panStart.y); draw(); return;
+  }
+  if (imgDragging && imgDragStartMouse) {
+    imgX = imgDragStartPos.x + (m.x-imgDragStartMouse.x)/scale;
+    imgY = imgDragStartPos.y - (m.y-imgDragStartMouse.y)/scale;
+    draw(); return;
+  }
+  const w = toW(m.x, m.y);
+  if (tool === 'select' || tool === 'break' || scaleCalMode) {
+    activeSnap = null; mouse = {x:w.x, y:w.y};
+  } else {
+    activeSnap = findSnap(w.x, w.y);
+    mouse = {x: activeSnap.x, y: activeSnap.y};
+    if (e.shiftKey) {
+      let ref = null;
+      if ((tool==='line'||tool==='rect'||tool==='circle'||tool==='ellipse') && startPt) ref = startPt;
+      else if ((tool==='polyline'||tool==='spline') && polyPts.length) ref = polyPts[polyPts.length-1];
+      if (ref) applyOrthoFrom(ref.x, ref.y);
+    }
+  }
+  document.getElementById('xy').textContent = `x: ${fmtN(mouse.x)}  y: ${fmtN(mouse.y)}`;
+  if (scaleCalMode) { draw(); return; }
+  if (tool === 'select') {
+    const overImg = imgObj && imgVisible && isOverImage(mouseRaw.x, mouseRaw.y);
+    canvas.style.cursor = overImg ? 'move' : 'default';
+    const h = hitEdgeAt(w.x, w.y);
+    if (h !== hoverEdgeId) { hoverEdgeId = h; if (!overImg) canvas.style.cursor = h !== null ? 'pointer' : 'default'; }
+  }
+  lastRawMouse = {x: mouse.x, y: mouse.y};
+  if (dynActive) { updateDynPlaceholders(); applyTypedOverride(); }
+  draw();
+});
+canvas.addEventListener('mousedown', e => {
+  if (e.button === 1 || spaceDown) {
+    if (e.button === 1) e.preventDefault();
+    isPanning = true; panStart = {x:e.clientX, y:e.clientY}; panOrigin = {x:panX, y:panY};
+    canvas.style.cursor = 'grabbing';
+    return;
+  }
+  if (e.button !== 0) return;
+  if (scaleCalMode) { const m = getMouse(e); const w = toW(m.x, m.y); handleScaleClick(m.x, m.y, w.x, w.y); return; }
+  if (tool === 'select') {
+    const m = getMouse(e);
+    if (imgObj && imgVisible && isOverImage(m.x, m.y)) {
+      imgDragging = true; imgDragStartMouse = {x:m.x, y:m.y}; imgDragStartPos = {x:imgX, y:imgY}; return;
+    }
+    const w = toW(mouseRaw.x, mouseRaw.y);
+    const id = hitEdgeAt(w.x, w.y);
+    if (id === null) { if (!e.shiftKey) clearSelection(); }
+    else {
+      let toAdd;
+      if (e.ctrlKey || e.metaKey) toAdd = edgesInGroupOf(id);
+      else toAdd = edgesInChainOf(id);
+      if (!e.shiftKey) clearSelection();
+      for (const i of toAdd) selectedEdgeIds.add(i);
+    }
+    draw(); return;
+  }
+  if (tool === 'break') {
+    const w = toW(mouseRaw.x, mouseRaw.y);
+    if (breakTargetGroup === null) {
+      const t = findArcPrimitiveAt(w.x, w.y);
+      if (!t) { showHint('Break tool works on circles - click closer to one.', 3500); return; }
+      breakTargetGroup = t.groupId;
+      breakFirstAngle = Math.atan2(w.y - t.prim.cy, w.x - t.prim.cx);
+      showHint('Now click the second point. Section CCW from first click is removed.', 0);
+      draw(); return;
+    }
+    const prim = groupPrimitives.get(breakTargetGroup);
+    if (!prim) { breakTargetGroup = null; breakFirstAngle = null; return; }
+    const secondAng = Math.atan2(w.y - prim.cy, w.x - prim.cx);
+    executeBreak(breakTargetGroup, breakFirstAngle, secondAng);
+    showHint('Section removed. Click another circle to break again.', 3500);
+    return;
+  }
+  if (tool === 'measure') {
+    if (!measurePt1 || measurePt2) { measurePt1 = {...mouse}; measurePt2 = null; document.getElementById('measure-out').style.display = 'none'; }
+    else { measurePt2 = {...mouse}; }
+    draw(); return;
+  }
+  if (tool === 'line') {
+    if (!drawing) { startPt = {...mouse}; drawing = true; lastRawMouse = {x:mouse.x, y:mouse.y}; showDyn(e.clientX, e.clientY); }
+    else { const sp = startPt; drawing = false; startPt = null; hideDyn(); commitLine(sp.x, sp.y, mouse.x, mouse.y); }
+  } else if (tool === 'rect') {
+    if (!drawing) { startPt = {...mouse}; drawing = true; lastRawMouse = {x:mouse.x, y:mouse.y}; showDyn(e.clientX, e.clientY); }
+    else { const sp = startPt; drawing = false; startPt = null; hideDyn(); commitRect(sp.x, sp.y, mouse.x, mouse.y); }
+  } else if (tool === 'circle') {
+    if (!drawing) { startPt = {...mouse}; drawing = true; lastRawMouse = {x:mouse.x, y:mouse.y}; showDyn(e.clientX, e.clientY); }
+    else { const sp = startPt; const r = Math.hypot(mouse.x-sp.x, mouse.y-sp.y); drawing = false; startPt = null; hideDyn(); commitCircle(sp.x, sp.y, r); }
+  } else if (tool === 'ellipse') {
+    if (!drawing) { startPt = {...mouse}; drawing = true; }
+    else { const sp = startPt; const rx = Math.abs(mouse.x-sp.x), ry = Math.abs(mouse.y-sp.y); drawing = false; startPt = null; commitEllipse(sp.x, sp.y, rx, ry); }
+  } else if (tool === 'polyline') {
+    if (polyPts.length >= 3 && dToFirst(mouseRaw.x, mouseRaw.y) < 14) {
+      const pts = polyPts.slice(); polyPts = []; commitPolyline(pts, true); showHint('Shape closed.', 3000);
+    } else { polyPts.push({...mouse}); draw(); }
+  } else if (tool === 'spline') {
+    if (polyPts.length >= 3 && dToFirst(mouseRaw.x, mouseRaw.y) < 14) {
+      const pts = polyPts.slice(); polyPts = []; commitSpline(pts, true); showHint('Curve closed.', 3000);
+    } else { polyPts.push({...mouse}); draw(); }
+  }
+});
+canvas.addEventListener('dblclick', () => {
+  if (tool === 'polyline' && polyPts.length >= 2) { const pts = polyPts.slice(); polyPts = []; commitPolyline(pts, false); }
+  else if (tool === 'spline' && polyPts.length >= 2) { const pts = polyPts.slice(); polyPts = []; commitSpline(pts, false); }
+  else if ((tool==='line'||tool==='rect'||tool==='circle'||tool==='ellipse') && drawing) { drawing = false; startPt = null; hideDyn(); draw(); }
+});
+canvas.addEventListener('mouseup', () => {
+  if (imgDragging) { imgDragging = false; imgDragStartMouse = null; imgDragStartPos = null; }
+  if (isPanning) { isPanning = false; canvas.style.cursor = (tool === 'select') ? 'default' : 'crosshair'; }
+});
+canvas.addEventListener('auxclick', e => { if (e.button === 1) e.preventDefault(); });
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const m = getMouse(e); const f = e.deltaY < 0 ? 1.12 : 0.89;
+  const wx = (m.x-panX)/scale, wy = -(m.y-panY)/scale;
+  scale = Math.max(5, Math.min(5000, scale*f));
+  panX = m.x - wx*scale; panY = m.y + wy*scale;
+  draw();
+}, {passive: false});
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && !e.target.matches('input,select')) spaceDown = true;
+  if (e.key === 'Escape') {
+    if (scaleCalMode) { cancelScale(); return; }
+    if (tool === 'break') { breakTargetGroup = null; breakFirstAngle = null; draw(); return; }
+    if (tool === 'measure') { measurePt1 = null; measurePt2 = null; document.getElementById('measure-out').style.display = 'none'; draw(); return; }
+    if (tool === 'select') { clearSelection(); draw(); return; }
+    polyPts = []; drawing = false; startPt = null; hideDyn(); draw();
+  }
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (tool === 'select' && selectedEdgeIds.size > 0 && !e.target.matches('input,select')) { e.preventDefault(); deleteSelected(); }
+  }
+  if (!e.target.matches('input,select')) {
+    if ((e.ctrlKey||e.metaKey) && e.key === 'a') { e.preventDefault(); selectAll(); return; }
+    if ((e.ctrlKey||e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); return; }
+    const map = {s:'select',l:'line',p:'polyline',v:'spline',r:'rect',c:'circle',e:'ellipse',b:'break',m:'measure'};
+    if (map[e.key.toLowerCase()]) setTool(map[e.key.toLowerCase()]);
+  }
+});
+document.addEventListener('keyup', e => { if (e.code === 'Space') spaceDown = false; });
+
+// ============================================================================
+// TOOL + UNITS + HISTORY + DXF
+// ============================================================================
+function setTool(t) {
+  tool = t; drawing = false; startPt = null; polyPts = [];
+  hideDyn();
+  clearSelection(); hoverEdgeId = null;
+  measurePt1 = null; measurePt2 = null;
+  breakTargetGroup = null; breakFirstAngle = null;
+  document.getElementById('measure-out').style.display = 'none';
+  document.querySelectorAll('.btn[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
+  canvas.style.cursor = (t === 'select') ? 'default' : 'crosshair';
+  const hints = {
+    select: 'Click a segment · Delete to remove · Shift+click adds · Ctrl+click = whole drawn shape · Ctrl+A = all',
+    line: 'Click start · click end · Shift for ortho',
+    polyline: 'Click points · click first or double-click to close · Shift for ortho',
+    spline: 'Click points · click first or double-click to close',
+    rect: 'Click corner · click opposite corner',
+    circle: 'Click centre · click edge',
+    ellipse: 'Click centre · click corner of bounding box',
+    break: 'Click a point on a circle, then click another · CCW section between them is removed',
+    measure: 'Click first point · click second point to lock · Esc to clear'
+  };
+  showHint(hints[t] || '');
+  draw();
+}
+document.querySelectorAll('.btn[data-tool]').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
+
+function switchUnits(u) {
+  if (u === units) return;
+  const f = u === 'mm' ? 25.4 : 1/25.4;
+  for (const v of vertices.values()) { v.x *= f; v.y *= f; }
+  for (const e of edges.values()) if (e.type === 'arc') { e.cx *= f; e.cy *= f; e.r *= f; }
+  for (const [, p] of groupPrimitives) { if (p.cx !== undefined) { p.cx *= f; p.cy *= f; } if (p.r !== undefined) p.r *= f; if (p.rx !== undefined) { p.rx *= f; p.ry *= f; } }
+  polyPts = polyPts.map(p => ({x: p.x*f, y: p.y*f}));
+  if (startPt) startPt = {x: startPt.x*f, y: startPt.y*f};
+  mouse = {x: mouse.x*f, y: mouse.y*f};
+  lastRawMouse = {x: lastRawMouse.x*f, y: lastRawMouse.y*f};
+  if (dynActive) { for (const k in dynFields){ if (k==='ang') continue; const el=dynFields[k]; if (el && el.value){ const v=parseFloat(el.value); if (isFinite(v)) el.value = fmtDyn(v*f); } } updateDynPlaceholders(); }
+  gridSize = u === 'mm' ? parseFloat((gridSize*25.4).toFixed(2)) : parseFloat((gridSize/25.4).toFixed(4));
+  scale = u === 'mm' ? scale/25.4 : scale*25.4;
+  units = u;
+  document.getElementById('grid-size').value = gridSize;
+  document.getElementById('btn-in').classList.toggle('on', u === 'in');
+  document.getElementById('btn-mm').classList.toggle('on', u === 'mm');
+  if (imgObj) {
+    document.getElementById('img-unit-label').textContent = u;
+    document.getElementById('img-world-w').value = parseFloat(imgWorldW.toFixed(u === 'mm' ? 2 : 3));
+  }
+  document.getElementById('scale-unit-label').textContent = u;
+  draw();
+}
+
+let history = [];
+function snapshot() {
+  return {
+    vertices: Array.from(vertices.values()).map(v => ({...v})),
+    edges: Array.from(edges.values()).map(e => ({...e})),
+    groupPrimitives: Array.from(groupPrimitives.entries()).map(([k,v]) => [k, {...v}]),
+    groupIntact: Array.from(groupIntact),
+    nextVertexId, nextEdgeId, nextGroupId
+  };
+}
+function restoreSnapshot(s) {
+  vertices = new Map(s.vertices.map(v => [v.id, {...v}]));
+  edges = new Map(s.edges.map(e => [e.id, {...e}]));
+  groupPrimitives = new Map(s.groupPrimitives.map(([k,v]) => [k, {...v}]));
+  groupIntact = new Set(s.groupIntact);
+  nextVertexId = s.nextVertexId; nextEdgeId = s.nextEdgeId; nextGroupId = s.nextGroupId;
+  selectedEdgeIds.clear(); hoverEdgeId = null;
+}
+function saveHistory() { history.push(snapshot()); if (history.length > 60) history.shift(); }
+function undo() {
+  if (!history.length) return;
+  restoreSnapshot(history.pop());
+  polyPts = []; drawing = false; startPt = null; hideDyn();
+  breakTargetGroup = null; breakFirstAngle = null;
+  draw();
+}
+function clearAll() {
+  if (!vertices.size && !polyPts.length) return;
+  saveHistory();
+  vertices = new Map(); edges = new Map();
+  groupPrimitives = new Map(); groupIntact = new Set();
+  nextVertexId = 1; nextEdgeId = 1; nextGroupId = 1;
+  polyPts = []; drawing = false; startPt = null; hideDyn();
+  selectedEdgeIds.clear(); hoverEdgeId = null;
+  breakTargetGroup = null; breakFirstAngle = null;
+  draw();
+}
+
+async function downloadDXF() {
+  const v = validateGeometry();
+  if (!v.valid) { alert('Cannot export yet:\n\n' + v.errs.map(e => '  • '+e).join('\n') + '\n\nFix the highlighted issues and try again.'); return; }
+  const byGroup = new Map();
+  for (const e of edges.values()) { if (!byGroup.has(e.groupId)) byGroup.set(e.groupId, []); byGroup.get(e.groupId).push(e); }
+  let ents = '';
+  for (const [gid, elist] of byGroup) {
+    const prim = groupPrimitives.get(gid);
+    if (prim && prim.type === 'circle' && groupIntact.has(gid) && elist.length === 2) {
+      ents += '  0\nCIRCLE\n  8\n0\n' +
+        ` 10\n${prim.cx.toFixed(8)}\n 20\n${prim.cy.toFixed(8)}\n 30\n0.0\n` +
+        ` 40\n${prim.r.toFixed(8)}\n`;
+      continue;
+    }
+    for (const e of elist) {
+      if (e.type === 'line') {
+        const a = V(e.v1), b = V(e.v2);
+        ents += '  0\nLINE\n  8\n0\n' +
+          ` 10\n${a.x.toFixed(8)}\n 20\n${a.y.toFixed(8)}\n 30\n0.0\n` +
+          ` 11\n${b.x.toFixed(8)}\n 21\n${b.y.toFixed(8)}\n 31\n0.0\n`;
+      } else if (e.type === 'arc') {
+        const v1 = V(e.v1), v2 = V(e.v2);
+        const a1d = (Math.atan2(v1.y-e.cy, v1.x-e.cx)*180/Math.PI + 360) % 360;
+        const a2d = (Math.atan2(v2.y-e.cy, v2.x-e.cx)*180/Math.PI + 360) % 360;
+        ents += '  0\nARC\n  8\n0\n' +
+          ` 10\n${e.cx.toFixed(8)}\n 20\n${e.cy.toFixed(8)}\n 30\n0.0\n` +
+          ` 40\n${e.r.toFixed(8)}\n 50\n${a1d.toFixed(6)}\n 51\n${a2d.toFixed(6)}\n`;
+      }
+    }
+  }
+  const insunits = units === 'mm' ? 4 : 1;
+  const measurement = units === 'mm' ? 1 : 0;
+  const hdr = ['  0','SECTION','  2','HEADER',
+    '  9','$ACADVER','  1','AC1015',
+    '  9','$INSUNITS',' 70',String(insunits),
+    '  9','$MEASUREMENT',' 70',String(measurement),
+    '  9','$LUNITS',' 70','2',
+    '  0','ENDSEC'].join('\n');
+  const dxf = `${hdr}\n  0\nSECTION\n  2\nENTITIES\n${ents}  0\nENDSEC\n  0\nEOF\n`;
+  const blob = new Blob([dxf], {type: 'application/dxf'});
+  if (window.showSaveFilePicker) {
+    try {
+      const fh = await window.showSaveFilePicker({ suggestedName: `my-part-${units}.dxf`, types: [{description: 'DXF File', accept: {'application/dxf': ['.dxf']}}] });
+      const ws = await fh.createWritable(); await ws.write(blob); await ws.close();
+    } catch (err) { if (err.name !== 'AbortError') alert('Save failed: ' + err.message); }
+  } else {
+    const a = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    a.href = url; a.download = `my-part-${units}.dxf`; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+}
+
+// ============================================================================
+// INIT
+// ============================================================================
+setTool('line');
+resize();
+showHint('True arcs: circles stay curved when cut · B = Break tool · Shift = ortho · Snap to endpoints/midpoints', 8000);
+</script>
+</body>
+</html>
