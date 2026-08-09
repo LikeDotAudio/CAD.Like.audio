@@ -236,6 +236,7 @@ export class EditorStore {
       units: this.units,
       gridSize: this.gridSize,
       pointer: this.pointer,
+      selection: this.selection,
     };
     renderScene(scene, {
       tool: this.tool,

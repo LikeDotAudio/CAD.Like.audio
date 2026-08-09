@@ -70,6 +70,7 @@ export type ToolId =
   | 'select'
   | 'line'
   | 'parallel'
+  | 'rotate'
   | 'polyline'
   | 'spline'
   | 'rect'

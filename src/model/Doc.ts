@@ -337,7 +337,63 @@ export class Doc {
     console.warn('resolveAllIntersections: hit the pass limit');
   }
 
-  // ------------------------------------------------------------ bulk changes
+  /** Rotate a set of edges by `angleRad` about pivot `(cx, cy)`. */
+  rotateEdges(edgeIds: Iterable<number>, cx: number, cy: number, angleRad: number): boolean {
+    const edgeSet = new Set(edgeIds);
+    if (!edgeSet.size || Math.abs(angleRad) < 1e-9) return false;
+
+    const cos = Math.cos(angleRad);
+    const sin = Math.sin(angleRad);
+
+    const affectedVertices = new Set<number>();
+    const affectedGroups = new Set<number>();
+
+    for (const id of edgeSet) {
+      const e = this.edges.get(id);
+      if (!e) continue;
+      affectedVertices.add(e.v1);
+      affectedVertices.add(e.v2);
+      if (e.groupId) {
+        affectedGroups.add(e.groupId);
+        this.groupIntact.delete(e.groupId);
+      }
+    }
+
+    // Rotate vertices
+    for (const vId of affectedVertices) {
+      const v = this.vertices.get(vId);
+      if (!v) continue;
+      const dx = v.x - cx;
+      const dy = v.y - cy;
+      v.x = cx + dx * cos - dy * sin;
+      v.y = cy + dx * sin + dy * cos;
+    }
+
+    // Rotate arc centers
+    for (const id of edgeSet) {
+      const e = this.edges.get(id);
+      if (e && e.type === 'arc') {
+        const dx = e.cx - cx;
+        const dy = e.cy - cy;
+        e.cx = cx + dx * cos - dy * sin;
+        e.cy = cy + dx * sin + dy * cos;
+      }
+    }
+
+    // Rotate group primitives
+    for (const gId of affectedGroups) {
+      const p = this.groupPrimitives.get(gId);
+      if (p) {
+        const dx = p.cx - cx;
+        const dy = p.cy - cy;
+        p.cx = cx + dx * cos - dy * sin;
+        p.cy = cy + dx * sin + dy * cos;
+      }
+    }
+
+    this.resolveAllIntersections();
+    return true;
+  }
 
   /** Multiply every coordinate by `f` (unit switches and scale calibration). */
   scaleAll(f: number): void {

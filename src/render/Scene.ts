@@ -18,6 +18,7 @@ export interface Scene {
     /** Canvas-relative pixel position. */
     screen: Point;
   };
+  selection?: ReadonlySet<number>;
 }
 
 /** Draw a text label with a translucent backdrop so it stays legible over geometry. */

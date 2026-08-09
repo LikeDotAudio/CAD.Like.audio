@@ -7,6 +7,7 @@ import { measureTool } from './measureTool';
 import { parallelTool } from './parallelTool';
 import { polylineTool } from './polylineTool';
 import { rectTool } from './rectTool';
+import { rotateTool } from './rotateTool';
 import { selectTool } from './selectTool';
 import { splineTool } from './splineTool';
 import type { AnyTool } from './types';
@@ -16,6 +17,7 @@ export const TOOLS: AnyTool[] = [
   selectTool,
   lineTool,
   parallelTool,
+  rotateTool,
   polylineTool,
   splineTool,
   rectTool,
