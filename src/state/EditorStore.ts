@@ -1,4 +1,4 @@
-import type { Layer, Point, ToolId, Units, ValidationResult } from '../core/types';
+import type { Layer, Point, ToolId, Units, GridMode, ValidationResult } from '../core/types';
 import { aciToHex } from '../core/dxfColors';
 import { parseMathExpression } from '../core/mathParser';
 import { calibrationFactor, idleCalibration, type CalibrationState } from '../image/calibration';
@@ -56,6 +56,7 @@ export interface UiState {
   toolId: ToolId;
   units: Units;
   gridSize: number;
+  gridMode: GridMode;
   snapToGrid: boolean;
   cursor: Point;
   edgeCount: number;
@@ -72,6 +73,7 @@ export interface UiState {
   layers: Layer[];
   activeLayerId: string;
   selectionSize: number;
+  selectionProtected: boolean;
 }
 
 const ORIGIN: Point = { x: 0, y: 0 };
@@ -96,6 +98,7 @@ export class EditorStore {
 
   private units: Units = 'in';
   private gridSize = 0.25;
+  private gridMode: GridMode = 'lines';
   private snapToGrid = true;
 
   private layers: Map<string, Layer> = new Map([
@@ -198,6 +201,7 @@ export class EditorStore {
       toolId: this.toolId,
       units: this.units,
       gridSize: this.gridSize,
+      gridMode: this.gridMode,
       snapToGrid: this.snapToGrid,
       cursor: this.pointer.world,
       edgeCount: this.doc.edgeCount,
@@ -219,6 +223,10 @@ export class EditorStore {
       layers: Array.from(this.layers.values()),
       activeLayerId: this.activeLayerId,
       selectionSize: this.selection.size,
+      selectionProtected:
+        this.selection.size > 0
+          ? Array.from(this.selection).every((id) => this.doc.edge(id)?.protected)
+          : false,
     };
   }
 
@@ -241,6 +249,7 @@ export class EditorStore {
       docSnapshot: this.doc.snapshot(),
       units: this.units,
       gridSize: this.gridSize,
+      gridMode: this.gridMode,
       snapToGrid: this.snapToGrid,
       shapeMode: this.shapeMode,
       activeLayerId: this.activeLayerId,
@@ -266,6 +275,7 @@ export class EditorStore {
     this.doc.restore(session.docSnapshot);
     this.units = session.units || 'in';
     this.gridSize = session.gridSize || 0.25;
+    this.gridMode = session.gridMode || 'lines';
     this.snapToGrid = session.snapToGrid ?? true;
     this.shapeMode = session.shapeMode ?? false;
 
@@ -322,6 +332,7 @@ export class EditorStore {
       doc: this.doc,
       units: this.units,
       gridSize: this.gridSize,
+      gridMode: this.gridMode,
       pointer: this.pointer,
       selection: this.selection,
     };
@@ -681,6 +692,12 @@ export class EditorStore {
     this.emit();
   }
 
+  setGridMode(mode: GridMode): void {
+    this.gridMode = mode;
+    this.requestDraw();
+    this.emit();
+  }
+
   setSnapToGrid(enabled: boolean): void {
     this.snapToGrid = enabled;
     this.requestDraw();
@@ -762,7 +779,10 @@ export class EditorStore {
     this.copySelection();
     this.history.push(this.doc.snapshot());
     for (const id of this.selection) {
-      this.doc.removeEdge(id);
+      const e = this.doc.edge(id);
+      if (e && !e.protected) {
+        this.doc.removeEdge(id);
+      }
     }
     this.selection.clear();
     this.hoverId = null;
@@ -816,7 +836,10 @@ export class EditorStore {
     const count = this.selection.size;
     this.history.push(this.doc.snapshot());
     for (const id of this.selection) {
-      this.doc.removeEdge(id);
+      const e = this.doc.edge(id);
+      if (e && !e.protected) {
+        this.doc.removeEdge(id);
+      }
     }
     this.selection.clear();
     this.hoverId = null;
@@ -1236,7 +1259,17 @@ export class EditorStore {
     if (!this.layers.has(layerId) || this.selection.size === 0) return;
     for (const edgeId of this.selection) {
       const e = this.doc.edges.get(edgeId);
-      if (e) e.layerId = layerId;
+      if (e && !e.protected) e.layerId = layerId;
+    }
+    this.requestDraw();
+    this.emit();
+  }
+
+  setSelectionProtected(isProtected: boolean): void {
+    if (this.selection.size === 0) return;
+    for (const edgeId of this.selection) {
+      const e = this.doc.edges.get(edgeId);
+      if (e) e.protected = isProtected;
     }
     this.requestDraw();
     this.emit();

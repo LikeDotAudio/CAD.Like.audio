@@ -39,6 +39,8 @@ interface EdgeBase {
   groupId: number;
   /** Layer identifier (defaults to '0'). */
   layerId: string;
+  /** Whether this edge is protected (locked & read-only). */
+  protected?: boolean;
 }
 
 export interface LineEdge extends EdgeBase {

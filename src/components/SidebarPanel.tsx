@@ -6,7 +6,7 @@ import type { Layer } from '../core/types';
 
 export function SidebarPanel() {
   const store = useStore();
-  const { layers, activeLayerId, selectionSize, edgeCount, toolId } = useUi();
+  const { layers, activeLayerId, selectionSize, selectionProtected } = useUi();
   const [newLayerName, setNewLayerName] = useState('');
   const [showColorPicker, setShowColorPicker] = useState<string | null>(null);
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
@@ -224,8 +224,9 @@ export function SidebarPanel() {
 
             {/* Layer Property */}
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[#888] w-20">Layer:</span>
+              <span className="text-[#888] w-24">Layer:</span>
               <select
+                disabled={selectionProtected}
                 value={activeLayerId}
                 onChange={(e) => {
                   const targetLayer = e.target.value;
@@ -234,7 +235,7 @@ export function SidebarPanel() {
                     store.setSelectionLayer(targetLayer);
                   }
                 }}
-                className="flex-1 bg-[#2d2d2d] border border-[#3c3c3c] rounded px-2 py-0.5 text-white focus:outline-none focus:border-[#007acc]"
+                className="flex-1 bg-[#2d2d2d] border border-[#3c3c3c] rounded px-2 py-0.5 text-white focus:outline-none focus:border-[#007acc] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {layers.map((l) => (
                   <option key={l.id} value={l.id}>
@@ -246,18 +247,19 @@ export function SidebarPanel() {
 
             {/* Color Property */}
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[#888] w-20">Color:</span>
-              <div className="flex-1 flex items-center justify-between gap-2 bg-[#2d2d2d] border border-[#3c3c3c] rounded px-2 py-0.5">
+              <span className="text-[#888] w-24">Color:</span>
+              <div className={'flex-1 flex items-center justify-between gap-2 bg-[#2d2d2d] border border-[#3c3c3c] rounded px-2 py-0.5 ' + (selectionProtected ? 'opacity-50' : '')}>
                 <span className="text-white truncate">By Layer ({activeLayer?.name})</span>
                 <button
                   type="button"
+                  disabled={selectionProtected}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (activeLayer) {
+                    if (activeLayer && !selectionProtected) {
                       setShowColorPicker(showColorPicker === activeLayer.id ? null : activeLayer.id);
                     }
                   }}
-                  className="h-3.5 w-3.5 rounded-sm border border-[#555] flex-shrink-0 hover:scale-110 transition-transform cursor-pointer"
+                  className="h-3.5 w-3.5 rounded-sm border border-[#555] flex-shrink-0 hover:scale-110 transition-transform cursor-pointer disabled:cursor-not-allowed"
                   style={{ backgroundColor: activeLayer?.color || '#fff' }}
                   title={`Layer Color: ${activeLayer?.color}`}
                 />
@@ -266,8 +268,8 @@ export function SidebarPanel() {
 
             {/* Lineweight */}
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[#888] w-20">Lineweight:</span>
-              <select className="flex-1 bg-[#2d2d2d] border border-[#3c3c3c] rounded px-2 py-0.5 text-[#aaa]">
+              <span className="text-[#888] w-24">Lineweight:</span>
+              <select disabled={selectionProtected} className="flex-1 bg-[#2d2d2d] border border-[#3c3c3c] rounded px-2 py-0.5 text-[#aaa] disabled:opacity-50 disabled:cursor-not-allowed">
                 <option>— By Layer</option>
                 <option>0.15 mm</option>
                 <option>0.25 mm</option>
@@ -277,8 +279,8 @@ export function SidebarPanel() {
 
             {/* Linetype */}
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[#888] w-20">Linetype:</span>
-              <select className="flex-1 bg-[#2d2d2d] border border-[#3c3c3c] rounded px-2 py-0.5 text-[#aaa]">
+              <span className="text-[#888] w-24">Linetype:</span>
+              <select disabled={selectionProtected} className="flex-1 bg-[#2d2d2d] border border-[#3c3c3c] rounded px-2 py-0.5 text-[#aaa] disabled:opacity-50 disabled:cursor-not-allowed">
                 <option>Continuous</option>
                 <option>Dashed</option>
                 <option>Dotted</option>
@@ -287,7 +289,7 @@ export function SidebarPanel() {
 
             {/* Linetype Scale */}
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[#888] w-20">Linetype Scale:</span>
+              <span className="text-[#888] w-24">Linetype Scale:</span>
               <input
                 type="text"
                 readOnly
@@ -296,26 +298,40 @@ export function SidebarPanel() {
               />
             </div>
 
-            {/* Total Elements */}
+            {/* Draw Order */}
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[#888] w-20">Total Edges:</span>
+              <span className="text-[#888] w-24">Draw Order:</span>
               <input
                 type="text"
                 readOnly
-                value={String(edgeCount)}
+                value="0"
                 className="flex-1 bg-[#252526] border border-[#3c3c3c] rounded px-2 py-0.5 text-[#777]"
               />
             </div>
 
-            {/* Active Tool */}
+            {/* Handle */}
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[#888] w-20">Active Tool:</span>
+              <span className="text-[#888] w-24">Handle:</span>
               <input
                 type="text"
                 readOnly
-                value={toolId.toUpperCase()}
+                value={selectionSize > 0 ? '0x1A' : ''}
                 className="flex-1 bg-[#252526] border border-[#3c3c3c] rounded px-2 py-0.5 text-[#777] font-mono"
               />
+            </div>
+
+            {/* Protected */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[#888] w-24">Protected:</span>
+              <select
+                disabled={selectionSize === 0}
+                value={selectionProtected ? 'yes' : 'no'}
+                onChange={(e) => store.setSelectionProtected(e.target.value === 'yes')}
+                className="flex-1 bg-[#2d2d2d] border border-[#3c3c3c] rounded px-2 py-0.5 text-white focus:outline-none focus:border-[#007acc] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes (Locked)</option>
+              </select>
             </div>
           </div>
         </div>

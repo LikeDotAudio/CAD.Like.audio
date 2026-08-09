@@ -7,7 +7,7 @@ import type { Units } from '../core/types';
 
 export function Toolbar() {
   const store = useStore();
-  const { canExport, shapeMode, units, gridSize, snapToGrid } = useUi();
+  const { canExport, shapeMode, units, gridSize, gridMode, snapToGrid } = useUi();
   const fileRef = useRef<HTMLInputElement>(null);
   const dxfFileRef = useRef<HTMLInputElement>(null);
 
@@ -544,6 +544,33 @@ export function Toolbar() {
                     onChange={(e) => store.setGridSize(parseFloat(e.target.value))}
                     className="w-20 bg-[#1e1e1e] border border-[#3c3c3c] rounded px-2 py-0.5 text-center text-white text-[11px] focus:outline-none focus:border-[#007acc]"
                   />
+                </div>
+
+                {/* Grid Mode */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-[#aaa]">Grid Mode:</span>
+                  <div className="flex items-center bg-[#1e1e1e] border border-[#3c3c3c] rounded p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => store.setGridMode('lines')}
+                      className={
+                        'px-2 py-0.5 text-[10px] font-semibold rounded transition-colors ' +
+                        (gridMode === 'lines' ? 'bg-[#007acc] text-white' : 'text-[#888] hover:text-white')
+                      }
+                    >
+                      Lines
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => store.setGridMode('dots')}
+                      className={
+                        'px-2 py-0.5 text-[10px] font-semibold rounded transition-colors ' +
+                        (gridMode === 'dots' ? 'bg-[#007acc] text-white' : 'text-[#888] hover:text-white')
+                      }
+                    >
+                      Dots
+                    </button>
+                  </div>
                 </div>
 
                 {/* Snap Function */}
