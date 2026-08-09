@@ -57,6 +57,7 @@ export interface UiState {
   dyn: DynUi | null;
   layers: Layer[];
   activeLayerId: string;
+  selectionSize: number;
 }
 
 const ORIGIN: Point = { x: 0, y: 0 };
@@ -199,6 +200,7 @@ export class EditorStore {
       dyn: this.buildDynUi(),
       layers: Array.from(this.layers.values()),
       activeLayerId: this.activeLayerId,
+      selectionSize: this.selection.size,
     };
   }
 
