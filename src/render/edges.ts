@@ -53,9 +53,7 @@ function isDarkColor(color?: string): boolean {
 export function drawEdges(scene: Scene, state: EdgeStyleState): void {
   const { ctx, doc, view } = scene;
   const selectedEndpoints: Array<{ x: number; y: number }> = [];
-
-  let minWorldX = Infinity, minWorldY = Infinity, maxWorldX = -Infinity, maxWorldY = -Infinity;
-  let hasSelectionBounds = false;
+  const selectedIds: number[] = [];
 
   for (const e of doc.edges.values()) {
     const layer = state.layers?.get(e.layerId ?? '0');
