@@ -106,12 +106,19 @@ export const lineTool: Tool<LineState> = {
         dx = Math.cos(t);
         dy = Math.sin(t);
       } else {
-        // No angle typed — keep the direction the cursor is pointing.
+        // No angle typed — keep the direction the cursor is pointing. With the
+        // cursor still on the start point there is no direction yet, so fall
+        // back to +X rather than collapsing the line to nothing.
         dx = cursor.x - state.start.x;
         dy = cursor.y - state.start.y;
-        const d = Math.hypot(dx, dy) || 1;
-        dx /= d;
-        dy /= d;
+        const d = Math.hypot(dx, dy);
+        if (d < 1e-9) {
+          dx = 1;
+          dy = 0;
+        } else {
+          dx /= d;
+          dy /= d;
+        }
       }
       return { x: state.start.x + len * dx, y: state.start.y + len * dy };
     },
