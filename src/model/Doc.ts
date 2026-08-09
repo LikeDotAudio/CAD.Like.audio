@@ -587,6 +587,21 @@ export class Doc {
     return null;
   }
 
+  groupSelected(edgeIds: Iterable<number>): number {
+    const edgeSet = new Set(edgeIds);
+    if (edgeSet.size <= 1) return 0;
+    const newGroupId = this.newGroupId();
+    let count = 0;
+    for (const id of edgeSet) {
+      const e = this.edges.get(id);
+      if (e) {
+        e.groupId = newGroupId;
+        count++;
+      }
+    }
+    return count;
+  }
+
   explodeSelected(edgeIds: Iterable<number>): number {
     let count = 0;
     for (const id of edgeIds) {

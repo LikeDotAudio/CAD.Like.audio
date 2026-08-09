@@ -136,6 +136,46 @@ export function ContextMenu() {
 
       <div className="my-0.5 border-t border-[#3c3c3c]" />
 
+      {/* Group */}
+      <button
+        type="button"
+        disabled={selectionSize <= 1}
+        onClick={() => {
+          store.groupSelection();
+          setMenuPos(null);
+        }}
+        className={
+          'flex w-full items-center justify-between px-3 py-1.5 rounded text-left transition-colors ' +
+          (selectionSize > 1
+            ? 'hover:bg-[#094771] hover:text-white text-[#ddd]'
+            : 'opacity-40 cursor-not-allowed')
+        }
+      >
+        <span className="flex items-center gap-2"><span>📦</span> Group Elements</span>
+        <span className="text-[10px] font-mono text-[#888]">GP</span>
+      </button>
+
+      {/* Ungroup (Explode) */}
+      <button
+        type="button"
+        disabled={selectionSize === 0}
+        onClick={() => {
+          store.explodeSelection();
+          setMenuPos(null);
+        }}
+        className={
+          'flex w-full items-center justify-between px-3 py-1.5 rounded text-left transition-colors ' +
+          (selectionSize > 0
+            ? 'hover:bg-[#094771] hover:text-white text-[#ddd]'
+            : 'opacity-40 cursor-not-allowed')
+        }
+      >
+        <span className="flex items-center gap-2"><span>💥</span> Ungroup / Explode</span>
+        <span className="text-[10px] font-mono text-[#888]">XP</span>
+      </button>
+
+      <div className="my-0.5 border-t border-[#3c3c3c]" />
+
       {/* Send to Layer Submenu */}
       <div
         className="relative"

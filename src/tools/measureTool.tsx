@@ -60,8 +60,23 @@ export const measureTool: Tool<MeasureState> = {
       state.p2 = null;
       api.setMeasurement(null);
     } else {
-      state.p2 = { ...input.world };
-      api.setMeasurement(`📏 ${readout(state.p1, state.p2, api)}`);
+      const p2 = { ...input.world };
+      state.p2 = p2;
+      const p1 = state.p1;
+      
+      // Commit line geometry to the drawing on the active layer
+      if (Math.hypot(p2.x - p1.x, p2.y - p1.y) > 1e-6) {
+        api.edit(() => {
+          const groupId = api.doc.newGroupId();
+          const v1 = api.doc.addVertex(p1.x, p1.y);
+          const v2 = api.doc.addVertex(p2.x, p2.y);
+          api.doc.addLineEdge(v1, v2, groupId, api.activeLayerId);
+          return true;
+        });
+        api.showHint(`Added dimension line to layer "${api.activeLayerId}".`, 2500);
+      }
+      
+      api.setMeasurement(`📏 ${readout(p1, p2, api)}`);
     }
     api.redraw();
   },

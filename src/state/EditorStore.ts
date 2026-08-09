@@ -959,6 +959,19 @@ export class EditorStore {
     this.showHint(`Flipped ${this.selection.size} element(s) vertically.`, 3000);
   }
 
+  groupSelection(): void {
+    if (this.selection.size <= 1) {
+      this.showHint('Select 2 or more elements to group.', 3000);
+      return;
+    }
+    this.history.push(this.doc.snapshot());
+    const count = this.doc.groupSelected(this.selection);
+    this.markDocChanged();
+    this.requestDraw();
+    this.emit();
+    this.showHint(`Grouped ${count} element(s).`, 3000);
+  }
+
   explodeSelection(): void {
     if (this.selection.size === 0) return;
     this.history.push(this.doc.snapshot());
