@@ -136,6 +136,8 @@ export class EditorStore {
   private validationCache: { version: number; result: ValidationResult } | null = null;
   private shapeMode = false;
   private clipboard: ClipboardItem[] = [];
+  /** Set between Ctrl+Shift+C and the click that names the reference point. */
+  private pickingBasePoint = false;
 
   private frameHandle = 0;
   private listeners = new Set<() => void>();
@@ -347,6 +349,7 @@ export class EditorStore {
       validation: this.validation(),
       shapeMode: this.shapeMode,
       layers: this.layers,
+      pickingBasePoint: this.pickingBasePoint,
     });
   }
 
@@ -470,7 +473,8 @@ export class EditorStore {
     let world = rawWorld;
     let snap: Snap | null = null;
 
-    if (!this.calibration.active && this.tool.snaps) {
+    // Picking a reference point always snaps, even under tools that normally don't.
+    if (!this.calibration.active && (this.tool.snaps || this.pickingBasePoint)) {
       snap = findSnap(this.doc, this.view, rawWorld.x, rawWorld.y, {
         gridSize: this.gridSize,
         snapToGrid: this.snapToGrid,
@@ -551,6 +555,11 @@ export class EditorStore {
 
     this.updatePointer(e, screen);
 
+    if (this.pickingBasePoint) {
+      this.finishBasePointPick();
+      return;
+    }
+
     if (this.calibration.active) {
       this.handleCalibrationClick(screen);
       return;
@@ -609,6 +618,12 @@ export class EditorStore {
     if (e.code === 'Space' && !inField) this.spaceDown = true;
 
     if (e.key === 'Escape') {
+      if (this.pickingBasePoint) {
+        this.cancelBasePointPick();
+        this.emit();
+        return;
+      }
+
       if (this.calibration.active) {
         this.cancelCalibration();
         return;
@@ -758,22 +773,54 @@ export class EditorStore {
 
   copySelection(): void {
     if (this.selection.size === 0) return;
-    const items: ClipboardItem[] = [];
+    const b = this.doc.boundsOf(this.selection);
+    if (!b) return;
+    const count = this.captureClipboard((b.x1 + b.x2) / 2, (b.y1 + b.y2) / 2);
+    this.showHint(`Copied ${count} element(s) to clipboard.`, 3000);
+  }
 
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-    for (const id of this.selection) {
-      const e = this.doc.edge(id);
-      if (!e) continue;
-      const [a, b] = this.doc.endpointsOf(e);
-      minX = Math.min(minX, a.x, b.x);
-      minY = Math.min(minY, a.y, b.y);
-      maxX = Math.max(maxX, a.x, b.x);
-      maxY = Math.max(maxY, a.y, b.y);
+  /**
+   * AutoCAD-style copy with base point: the next click names the reference point,
+   * and paste puts that exact point under the cursor instead of the bbox centre.
+   */
+  copySelectionWithReference(): void {
+    if (this.selection.size === 0) {
+      this.showHint('Select something first, then Ctrl+Shift+C to copy from a reference point.', 3000);
+      return;
     }
+    this.pickingBasePoint = true;
+    this.setCursor('crosshair');
+    this.showHint('Click the reference point to copy from (Esc cancels) — snaps to endpoints and midpoints.', 0);
+    this.requestDraw();
+    this.emit();
+  }
 
-    const cx = (minX + maxX) / 2;
-    const cy = (minY + maxY) / 2;
+  private cancelBasePointPick(): void {
+    if (!this.pickingBasePoint) return;
+    this.pickingBasePoint = false;
+    this.setCursor(this.tool.cursor);
+    this.showHint('Copy from reference point cancelled.', 2000);
+    this.requestDraw();
+  }
+
+  private finishBasePointPick(): void {
+    const origin = this.pointer.world;
+    this.pickingBasePoint = false;
+    this.setCursor(this.tool.cursor);
+    const count = this.captureClipboard(origin.x, origin.y);
+    this.showHint(
+      count > 0
+        ? `Copied ${count} element(s) from the reference point — Ctrl+V drops that point at the cursor.`
+        : 'Nothing copied.',
+      4000,
+    );
+    this.requestDraw();
+    this.emit();
+  }
+
+  /** Store the selection in the clipboard, relative to the given world origin. */
+  private captureClipboard(cx: number, cy: number): number {
+    const items: ClipboardItem[] = [];
 
     for (const id of this.selection) {
       const e = this.doc.edge(id);
@@ -794,7 +841,7 @@ export class EditorStore {
     }
 
     this.clipboard = items;
-    this.showHint(`Copied ${items.length} element(s) to clipboard.`, 3000);
+    return items.length;
   }
 
   cutSelection(): void {
@@ -820,7 +867,13 @@ export class EditorStore {
     if (this.clipboard.length === 0) return;
     this.history.push(this.doc.snapshot());
 
-    const center = this.pointer.world || { x: 0, y: 0 };
+    // Snap the drop point so a reference-point copy can land exactly on existing geometry.
+    const center = this.tool.snaps
+      ? this.pointer.world
+      : findSnap(this.doc, this.view, this.pointer.rawWorld.x, this.pointer.rawWorld.y, {
+          gridSize: this.gridSize,
+          snapToGrid: this.snapToGrid,
+        });
     const groupId = this.doc.newGroupId();
     const newEdgeIds: number[] = [];
 

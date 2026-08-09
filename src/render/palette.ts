@@ -27,6 +27,10 @@ export const CANVAS = {
   measureFill: 'rgba(34,197,94,.95)',
   calibrate: '#a855f7',
   bounds: '#f97316',
+  /** Orange grab squares on selected endpoints, midpoints and net corners. */
+  handle: '#f97316',
+  /** Dashed net drawn around a multi-element selection. */
+  selectionNet: '#38bdf8',
   imageOutline: 'rgba(129,140,248,0.6)',
   white: '#ffffff',
 } as const;

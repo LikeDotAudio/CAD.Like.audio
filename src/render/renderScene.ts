@@ -22,6 +22,8 @@ export interface FrameState {
   validation: ValidationResult;
   shapeMode?: boolean;
   layers?: ReadonlyMap<string, Layer>;
+  /** True while Ctrl+Shift+C waits for the reference point click. */
+  pickingBasePoint?: boolean;
 }
 
 /** Paint one frame, back to front. */
@@ -43,8 +45,8 @@ export function renderScene(scene: Scene, frame: FrameState): void {
   }
 
   if (!frame.calibration.active) {
-    frame.tool.drawPreview?.(frame.toolState, scene);
-    const showSnap = frame.tool.showsSnapIndicator ?? frame.tool.snaps;
+    if (!frame.pickingBasePoint) frame.tool.drawPreview?.(frame.toolState, scene);
+    const showSnap = frame.pickingBasePoint || (frame.tool.showsSnapIndicator ?? frame.tool.snaps);
     if (showSnap) drawSnapIndicator(scene, frame.snap);
   }
 

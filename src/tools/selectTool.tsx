@@ -1,8 +1,20 @@
 import { edgesInChainOf, edgesInGroupOf } from '../model/topology';
 import { dot } from '../render/dimensions';
 import { CANVAS } from '../render/palette';
+import { cornerCursor, hitCorner, oppositeCorner, paddedBounds } from '../render/selectionBox';
 import type { Point } from '../core/types';
+import type { ToolApi } from './types';
 import type { Tool } from './types';
+
+interface ScaleDrag {
+  /** Corner the drag is anchored to — stays put while the opposite corner follows the cursor. */
+  anchor: Point;
+  /** Cursor-to-anchor distance when the drag began. */
+  startDist: number;
+  /** Scale already applied, so each move only has to apply the delta. */
+  appliedFactor: number;
+  snapshot: boolean;
+}
 
 interface SelectState {
   dragStartWorld: Point | null;
@@ -10,6 +22,14 @@ interface SelectState {
   boxEndScreen: Point | null;
   isMoving: boolean;
   movedSnapshot: boolean;
+  scaling: ScaleDrag | null;
+}
+
+/** Padded selection net bounds, or null when fewer than two elements are selected. */
+function netBounds(api: ToolApi) {
+  if (api.selection.size < 2) return null;
+  const b = api.doc.boundsOf(api.selection);
+  return b ? paddedBounds(api.view, b) : null;
 }
 
 const Icon = (
@@ -23,8 +43,8 @@ export const selectTool: Tool<SelectState> = {
   label: 'Select',
   shortcut: 's',
   title:
-    'Select (S) — Click edge to select, drag to move selection, or drag box select. Ctrl+C (Copy), Ctrl+X (Cut), Ctrl+V (Paste), Delete.',
-  hint: 'Click edge to select · Drag selection to move · Box select · Ctrl+C/X/V/A · Delete',
+    'Select (S) — Click edge to select, drag to move selection, drag a corner handle to scale, or drag box select. Ctrl+C (Copy), Ctrl+Shift+C (Copy from reference point), Ctrl+X (Cut), Ctrl+V (Paste), Delete.',
+  hint: 'Click edge to select · Drag to move · Drag corner handle to scale · Ctrl+Shift+C copies from a reference point',
   icon: Icon,
   cursor: 'default',
   snaps: false,
@@ -35,9 +55,30 @@ export const selectTool: Tool<SelectState> = {
     boxEndScreen: null,
     isMoving: false,
     movedSnapshot: false,
+    scaling: null,
   }),
 
   onPointerMove(state, input, api) {
+    if (state.scaling) {
+      const { anchor, startDist } = state.scaling;
+      const dist = Math.hypot(input.rawWorld.x - anchor.x, input.rawWorld.y - anchor.y);
+      // Below this the selection would collapse onto the anchor and lose its shape.
+      const target = Math.max(dist / startDist, 0.01);
+      const delta = target / state.scaling.appliedFactor;
+
+      if (Math.abs(delta - 1) > 1e-6) {
+        if (!state.scaling.snapshot) {
+          api.edit(() => true);
+          state.scaling.snapshot = true;
+        }
+        api.doc.scaleEdges(api.selection, anchor.x, anchor.y, delta);
+        state.scaling.appliedFactor = target;
+        api.setMeasurement(`Scale ${target.toFixed(3)}×`);
+        api.redraw();
+      }
+      return;
+    }
+
     if (state.isMoving && state.dragStartWorld && api.selection.size > 0) {
       const dx = input.world.x - state.dragStartWorld.x;
       const dy = input.world.y - state.dragStartWorld.y;
@@ -60,12 +101,34 @@ export const selectTool: Tool<SelectState> = {
       return;
     }
 
+    const net = netBounds(api);
+    const corner = net ? hitCorner(api.view, net, input.screen) : null;
+    if (corner !== null) {
+      api.setHoverEdge(null);
+      api.setCursor(cornerCursor(corner));
+      return;
+    }
+
     const hit = api.doc.hitEdgeAt(input.rawWorld.x, input.rawWorld.y, api.view.zoom);
     api.setHoverEdge(hit);
     api.setCursor(hit !== null ? 'pointer' : 'default');
   },
 
   onPointerDown(state, input, api) {
+    // Corner grab handles sit on top of everything else, including the geometry under them.
+    const net = netBounds(api);
+    const corner = net ? hitCorner(api.view, net, input.screen) : null;
+    if (net && corner !== null) {
+      const anchor = oppositeCorner(net, corner);
+      const startDist = Math.hypot(input.rawWorld.x - anchor.x, input.rawWorld.y - anchor.y);
+      if (startDist > 0) {
+        state.scaling = { anchor, startDist, appliedFactor: 1, snapshot: false };
+        api.setCursor(cornerCursor(corner));
+        api.redraw();
+        return;
+      }
+    }
+
     const hit = api.doc.hitEdgeAt(input.rawWorld.x, input.rawWorld.y, api.view.zoom);
 
     if (hit !== null) {
@@ -96,6 +159,14 @@ export const selectTool: Tool<SelectState> = {
   },
 
   onPointerUp(state, _input, api) {
+    if (state.scaling) {
+      state.scaling = null;
+      api.setMeasurement(null);
+      api.setCursor('default');
+      api.redraw();
+      return;
+    }
+
     if (state.boxStartScreen && state.boxEndScreen) {
       const x1 = Math.min(state.boxStartScreen.x, state.boxEndScreen.x);
       const x2 = Math.max(state.boxStartScreen.x, state.boxEndScreen.x);
@@ -129,6 +200,8 @@ export const selectTool: Tool<SelectState> = {
     state.dragStartWorld = null;
     state.boxStartScreen = null;
     state.boxEndScreen = null;
+    state.scaling = null;
+    api.setMeasurement(null);
     api.selection.clear();
     api.redraw();
   },

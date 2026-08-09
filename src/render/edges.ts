@@ -2,6 +2,7 @@ import { TAU } from '../core/constants';
 import type { Edge, Layer } from '../core/types';
 import type { Scene } from './Scene';
 import { CANVAS, FONT } from './palette';
+import { CORNER_PX, cornerPoints, paddedBounds } from './selectionBox';
 
 /** Stroke a single edge. Arcs are drawn as real canvas arcs, never tessellated. */
 export function renderEdge(scene: Scene, e: Edge, stroke: string, lineWidth: number): void {
@@ -65,22 +66,14 @@ export function drawEdges(scene: Scene, state: EdgeStyleState): void {
 
     if (isSelected) {
       renderEdge(scene, e, CANVAS.edgeSelected, 2.8);
+      selectedIds.push(e.id);
 
       // Collect endpoints and midpoints for selected element handles
       const [a, b] = doc.endpointsOf(e);
-      const sa = view.toScreen(a.x, a.y);
-      const sb = view.toScreen(b.x, b.y);
-      selectedEndpoints.push(sa, sb);
+      selectedEndpoints.push(view.toScreen(a.x, a.y), view.toScreen(b.x, b.y));
 
       const mid = doc.edgeMidpoint(e);
-      const smid = view.toScreen(mid.x, mid.y);
-      selectedEndpoints.push(smid);
-
-      minWorldX = Math.min(minWorldX, a.x, b.x);
-      minWorldY = Math.min(minWorldY, a.y, b.y);
-      maxWorldX = Math.max(maxWorldX, a.x, b.x);
-      maxWorldY = Math.max(maxWorldY, a.y, b.y);
-      hasSelectionBounds = true;
+      selectedEndpoints.push(view.toScreen(mid.x, mid.y));
     } else if (state.hoverEnabled && e.id === state.hoverId) {
       renderEdge(scene, e, CANVAS.edgeHover, 2.2);
     } else {
@@ -88,59 +81,53 @@ export function drawEdges(scene: Scene, state: EdgeStyleState): void {
     }
   }
 
-  // 1. Draw orange square handles on selected element endpoints/midpoints
+  // 1. Orange square handles on every endpoint and midpoint of the selection
   if (selectedEndpoints.length > 0) {
     ctx.save();
-    ctx.fillStyle = '#f97316'; // Orange handle color
-    ctx.strokeStyle = '#ffffff';
+    ctx.fillStyle = CANVAS.handle;
+    ctx.strokeStyle = CANVAS.white;
     ctx.lineWidth = 1;
-    const handleSize = 6;
+    const handleSize = 7;
     for (const p of selectedEndpoints) {
       ctx.beginPath();
-      ctx.rect(p.x - handleSize / 2, p.y - handleSize / 2, handleSize, handleSize);
+      ctx.rect(
+        Math.round(p.x) - handleSize / 2,
+        Math.round(p.y) - handleSize / 2,
+        handleSize,
+        handleSize,
+      );
       ctx.fill();
       ctx.stroke();
     }
     ctx.restore();
   }
 
-  // 2. Draw selection bounding box and corner handles when 2+ elements are selected
-  if (state.selected.size > 1 && hasSelectionBounds) {
-    const margin = 0.05; // World units margin
-    const sa = view.toScreen(minWorldX - margin, minWorldY - margin);
-    const sb = view.toScreen(maxWorldX + margin, maxWorldY + margin);
-
-    const bx = Math.min(sa.x, sb.x);
-    const by = Math.min(sa.y, sb.y);
-    const bw = Math.abs(sb.x - sa.x);
-    const bh = Math.abs(sb.y - sa.y);
+  // 2. Selection net plus its four grabbable corners, once 2+ elements are selected
+  const bounds = state.selected.size > 1 ? doc.boundsOf(selectedIds) : null;
+  if (bounds) {
+    const b = paddedBounds(view, bounds);
+    const tl = view.toScreen(b.x1, b.y2);
+    const br = view.toScreen(b.x2, b.y1);
 
     ctx.save();
-    ctx.strokeStyle = '#38bdf8'; // Blue selection net line
+    ctx.strokeStyle = CANVAS.selectionNet;
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
-    ctx.strokeRect(bx, by, bw, bh);
+    ctx.strokeRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
     ctx.setLineDash([]);
 
-    // Corner & Edge Grab Handles
-    ctx.fillStyle = '#0284c7';
-    ctx.strokeStyle = '#ffffff';
+    ctx.fillStyle = CANVAS.handle;
+    ctx.strokeStyle = CANVAS.white;
     ctx.lineWidth = 1.2;
-    const cornerSize = 7;
-    const corners = [
-      { x: bx, y: by },
-      { x: bx + bw, y: by },
-      { x: bx, y: by + bh },
-      { x: bx + bw, y: by + bh },
-      { x: bx + bw / 2, y: by },
-      { x: bx + bw / 2, y: by + bh },
-      { x: bx, y: by + bh / 2 },
-      { x: bx + bw, y: by + bh / 2 },
-    ];
-
-    for (const c of corners) {
+    for (const c of cornerPoints(b)) {
+      const s = view.toScreen(c.x, c.y);
       ctx.beginPath();
-      ctx.rect(c.x - cornerSize / 2, c.y - cornerSize / 2, cornerSize, cornerSize);
+      ctx.rect(
+        Math.round(s.x) - CORNER_PX / 2,
+        Math.round(s.y) - CORNER_PX / 2,
+        CORNER_PX,
+        CORNER_PX,
+      );
       ctx.fill();
       ctx.stroke();
     }

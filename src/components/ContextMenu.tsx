@@ -102,6 +102,25 @@ export function ContextMenu() {
         <span className="text-[10px] opacity-60">Ctrl+C</span>
       </button>
 
+      {/* Copy from reference point */}
+      <button
+        type="button"
+        disabled={selectionSize === 0}
+        onClick={() => {
+          store.copySelectionWithReference();
+          setMenuPos(null);
+        }}
+        className={
+          'flex w-full items-center justify-between px-3 py-1.5 rounded text-left transition-colors ' +
+          (selectionSize > 0
+            ? 'hover:bg-[#094771] hover:text-white text-[#ddd]'
+            : 'opacity-40 cursor-not-allowed')
+        }
+      >
+        <span className="flex items-center gap-2"><span>🎯</span> Copy from point</span>
+        <span className="text-[10px] opacity-60">Ctrl+Shift+C</span>
+      </button>
+
       {/* Paste */}
       <button
         type="button"
