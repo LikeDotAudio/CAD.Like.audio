@@ -94,11 +94,18 @@ export const circleTool: Tool<CircleState> = {
       let r = values.r;
       if (r === null || r === undefined || r <= 0) return null;
       if (mode === 'd') r /= 2;
+      // Any direction gives the same circle; +X is the fallback when the
+      // cursor has not left the centre yet.
       let dx = cursor.x - state.centre.x;
       let dy = cursor.y - state.centre.y;
-      const d = Math.hypot(dx, dy) || 1;
-      dx /= d;
-      dy /= d;
+      const d = Math.hypot(dx, dy);
+      if (d < 1e-9) {
+        dx = 1;
+        dy = 0;
+      } else {
+        dx /= d;
+        dy /= d;
+      }
       return { x: state.centre.x + r * dx, y: state.centre.y + r * dy };
     },
 

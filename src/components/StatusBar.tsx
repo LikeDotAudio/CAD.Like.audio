@@ -15,9 +15,6 @@ export function StatusBar() {
       <span className="tracking-[0.04em]">
         {edgeCount} edge{edgeCount === 1 ? '' : 's'}
       </span>
-      <span className="text-[11px] font-medium text-accent">
-        ✦ For complex parts, please use your favourite 2D CAD software!
-      </span>
       <span className="ml-auto text-[11px] text-ink-3">
         Pan: middle-drag or Space+drag · Shift=ortho · S L P V R C E B M · Delete · Ctrl+Z · Ctrl+A
       </span>
