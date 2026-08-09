@@ -4,6 +4,11 @@
   "version": "1.0.0",
   "type": "module",
   "description": "CAD.LIKE.AUDIO — 2D CAD sketcher with true-arc geometry and DXF export.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LikeDotAudio/CAD.Like.audio.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
