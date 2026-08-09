@@ -51,16 +51,102 @@ function isDarkColor(color?: string): boolean {
 }
 
 export function drawEdges(scene: Scene, state: EdgeStyleState): void {
-  for (const e of scene.doc.edges.values()) {
+  const { ctx, doc, view } = scene;
+  const selectedEndpoints: Array<{ x: number; y: number }> = [];
+
+  let minWorldX = Infinity, minWorldY = Infinity, maxWorldX = -Infinity, maxWorldY = -Infinity;
+  let hasSelectionBounds = false;
+
+  for (const e of doc.edges.values()) {
     const layer = state.layers?.get(e.layerId ?? '0');
     // Hide edge if its assigned layer is hidden
     if (layer && !layer.visible) continue;
 
     const baseColor = isDarkColor(layer?.color) ? CANVAS.edge : layer!.color;
+    const isSelected = state.selected.has(e.id);
 
-    if (state.selected.has(e.id)) renderEdge(scene, e, CANVAS.edgeSelected, 2.8);
-    else if (state.hoverEnabled && e.id === state.hoverId) renderEdge(scene, e, CANVAS.edgeHover, 2.2);
-    else renderEdge(scene, e, baseColor, 1.5);
+    if (isSelected) {
+      renderEdge(scene, e, CANVAS.edgeSelected, 2.8);
+
+      // Collect endpoints and midpoints for selected element handles
+      const [a, b] = doc.endpointsOf(e);
+      const sa = view.toScreen(a.x, a.y);
+      const sb = view.toScreen(b.x, b.y);
+      selectedEndpoints.push(sa, sb);
+
+      const mid = doc.edgeMidpoint(e);
+      const smid = view.toScreen(mid.x, mid.y);
+      selectedEndpoints.push(smid);
+
+      minWorldX = Math.min(minWorldX, a.x, b.x);
+      minWorldY = Math.min(minWorldY, a.y, b.y);
+      maxWorldX = Math.max(maxWorldX, a.x, b.x);
+      maxWorldY = Math.max(maxWorldY, a.y, b.y);
+      hasSelectionBounds = true;
+    } else if (state.hoverEnabled && e.id === state.hoverId) {
+      renderEdge(scene, e, CANVAS.edgeHover, 2.2);
+    } else {
+      renderEdge(scene, e, baseColor, 1.5);
+    }
+  }
+
+  // 1. Draw orange square handles on selected element endpoints/midpoints
+  if (selectedEndpoints.length > 0) {
+    ctx.save();
+    ctx.fillStyle = '#f97316'; // Orange handle color
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    const handleSize = 6;
+    for (const p of selectedEndpoints) {
+      ctx.beginPath();
+      ctx.rect(p.x - handleSize / 2, p.y - handleSize / 2, handleSize, handleSize);
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // 2. Draw selection bounding box and corner handles when 2+ elements are selected
+  if (state.selected.size > 1 && hasSelectionBounds) {
+    const margin = 0.05; // World units margin
+    const sa = view.toScreen(minWorldX - margin, minWorldY - margin);
+    const sb = view.toScreen(maxWorldX + margin, maxWorldY + margin);
+
+    const bx = Math.min(sa.x, sb.x);
+    const by = Math.min(sa.y, sb.y);
+    const bw = Math.abs(sb.x - sa.x);
+    const bh = Math.abs(sb.y - sa.y);
+
+    ctx.save();
+    ctx.strokeStyle = '#38bdf8'; // Blue selection net line
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeRect(bx, by, bw, bh);
+    ctx.setLineDash([]);
+
+    // Corner & Edge Grab Handles
+    ctx.fillStyle = '#0284c7';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.2;
+    const cornerSize = 7;
+    const corners = [
+      { x: bx, y: by },
+      { x: bx + bw, y: by },
+      { x: bx, y: by + bh },
+      { x: bx + bw, y: by + bh },
+      { x: bx + bw / 2, y: by },
+      { x: bx + bw / 2, y: by + bh },
+      { x: bx, y: by + bh / 2 },
+      { x: bx + bw, y: by + bh / 2 },
+    ];
+
+    for (const c of corners) {
+      ctx.beginPath();
+      ctx.rect(c.x - cornerSize / 2, c.y - cornerSize / 2, cornerSize, cornerSize);
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 }
 

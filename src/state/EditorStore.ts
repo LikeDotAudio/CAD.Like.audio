@@ -648,7 +648,11 @@ export class EditorStore {
         this.undo();
       } else if (key === 'c') {
         e.preventDefault();
-        this.copySelection();
+        if (e.shiftKey) {
+          this.copySelectionWithReference();
+        } else {
+          this.copySelection();
+        }
       } else if (key === 'x') {
         e.preventDefault();
         this.cutSelection();
