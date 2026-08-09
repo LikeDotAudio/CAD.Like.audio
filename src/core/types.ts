@@ -69,6 +69,7 @@ export type GroupPrimitive = CirclePrimitive;
 export type ToolId =
   | 'select'
   | 'line'
+  | 'parallel'
   | 'polyline'
   | 'spline'
   | 'rect'

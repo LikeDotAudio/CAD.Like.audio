@@ -4,6 +4,7 @@ import { circleTool } from './circleTool';
 import { ellipseTool } from './ellipseTool';
 import { lineTool } from './lineTool';
 import { measureTool } from './measureTool';
+import { parallelTool } from './parallelTool';
 import { polylineTool } from './polylineTool';
 import { rectTool } from './rectTool';
 import { selectTool } from './selectTool';
@@ -14,6 +15,7 @@ import type { AnyTool } from './types';
 export const TOOLS: AnyTool[] = [
   selectTool,
   lineTool,
+  parallelTool,
   polylineTool,
   splineTool,
   rectTool,
