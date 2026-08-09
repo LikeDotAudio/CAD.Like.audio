@@ -15,7 +15,7 @@ export function GridSizeRow() {
         min="0.01"
         value={gridSize}
         onChange={(e) => store.setGridSize(parseFloat(e.target.value))}
-        className="w-20 rounded border border-[#3c3c3c] bg-[#1e1e1e] px-2 py-0.5 text-center text-[11px] text-white focus:border-[#007acc] focus:outline-none"
+        className="w-20 rounded border border-[#3c3c3c] bg-[#1e1e1e] px-2 py-0.5 text-center text-[11px] text-white focus:border-[#f4902c] focus:outline-none"
       />
     </div>
   );

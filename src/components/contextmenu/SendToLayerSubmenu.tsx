@@ -20,7 +20,7 @@ export function SendToLayerSubmenu({ onDone }: SendToLayerSubmenuProps) {
         disabled={!enabled}
         className={
           'flex w-full items-center justify-between rounded px-3 py-1.5 text-left transition-colors ' +
-          (enabled ? 'text-[#ddd] hover:bg-[#094771] hover:text-white' : 'cursor-not-allowed opacity-40')
+          (enabled ? 'text-[#ddd] hover:bg-[rgba(244,144,44,0.18)] hover:text-white' : 'cursor-not-allowed opacity-40')
         }
       >
         <span className="flex items-center gap-2">
@@ -43,7 +43,7 @@ export function SendToLayerSubmenu({ onDone }: SendToLayerSubmenuProps) {
               className={
                 'flex items-center justify-between rounded px-2.5 py-1.5 text-left text-[11px] transition-colors ' +
                 (layer.id === activeLayerId
-                  ? 'bg-[#094771] font-semibold text-white'
+                  ? 'bg-[#f4902c] font-semibold text-[#1e1e1e]'
                   : 'text-[#ddd] hover:bg-[#383838]')
               }
             >

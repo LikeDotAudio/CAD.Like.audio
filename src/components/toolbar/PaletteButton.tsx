@@ -24,7 +24,7 @@ export function PaletteButton({ title, active = false, wide = false, onSelect, c
         'flex h-7 cursor-pointer items-center justify-center rounded-none border-0 p-0 transition-colors ' +
         (wide ? 'col-span-2 w-full ' : 'w-7 ') +
         (active
-          ? 'bg-[#094771] text-white'
+          ? 'bg-[#f4902c] text-[#1e1e1e]'
           : 'bg-[#2d2d2d] text-[#cccccc] hover:bg-[#383838] hover:text-white')
       }
     >

@@ -13,7 +13,7 @@ export function SnapToggleRow() {
         type="checkbox"
         checked={snapToGrid}
         onChange={(e) => store.setSnapToGrid(e.target.checked)}
-        className="h-4 w-4 rounded border-[#3c3c3c] bg-[#1e1e1e] accent-[#007acc]"
+        className="h-4 w-4 rounded border-[#3c3c3c] bg-[#1e1e1e] accent-[#f4902c]"
       />
     </label>
   );

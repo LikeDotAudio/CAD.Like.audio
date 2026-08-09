@@ -38,7 +38,7 @@ export function LayerRow({
     <div
       className={
         'flex cursor-pointer items-center justify-between rounded px-2 py-1 transition-colors ' +
-        (isActive ? 'bg-[#094771] text-white' : 'text-[#cccccc] hover:bg-[#2a2d2e]')
+        (isActive ? 'bg-[#f4902c] text-[#1e1e1e]' : 'text-[#cccccc] hover:bg-[#2a2d2e]')
       }
       onClick={() => store.setActiveLayer(layer.id)}
       onContextMenu={onContextMenu}
@@ -47,7 +47,7 @@ export function LayerRow({
         <div
           className={
             'h-2 w-2 flex-shrink-0 rounded-full transition-transform ' +
-            (isActive ? 'scale-125 bg-[#007acc]' : 'border border-[#666] bg-transparent')
+            (isActive ? 'scale-125 bg-[#f4902c]' : 'border border-[#666] bg-transparent')
           }
           title={isActive ? 'Active Layer' : 'Click to set active'}
         />
@@ -74,7 +74,7 @@ export function LayerRow({
               if (e.key === 'Enter') onCommitRename();
               if (e.key === 'Escape') onCancelRename();
             }}
-            className="w-full border border-[#007acc] bg-[#1e1e1e] px-1 py-0 text-[11px] text-white focus:outline-none"
+            className="w-full border border-[#f4902c] bg-[#1e1e1e] px-1 py-0 text-[11px] text-white focus:outline-none"
           />
         ) : (
           <span

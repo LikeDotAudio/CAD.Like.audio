@@ -19,7 +19,7 @@ export function MenuItem({ icon, label, shortcut, disabled = false, onSelect }: 
       onClick={onSelect}
       className={
         'flex w-full items-center justify-between rounded px-3 py-1.5 text-left text-[12px] transition-colors ' +
-        (disabled ? 'cursor-not-allowed opacity-40' : 'hover:bg-[#094771] hover:text-white')
+        (disabled ? 'cursor-not-allowed opacity-40' : 'hover:bg-[rgba(244,144,44,0.18)] hover:text-white')
       }
     >
       <span className="flex items-center gap-2">

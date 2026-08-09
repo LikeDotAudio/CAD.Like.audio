@@ -61,7 +61,7 @@ export function ImportUnitModal({
           <select
             value={sourceUnit}
             onChange={(e) => setSourceUnit(e.target.value as Units)}
-            className="w-full rounded border border-[#3c3c3c] bg-[#1e1e1e] px-3 py-2 text-xs text-white focus:border-[#007acc] focus:outline-none"
+            className="w-full rounded border border-[#3c3c3c] bg-[#1e1e1e] px-3 py-2 text-xs text-white focus:border-[#f4902c] focus:outline-none"
           >
             {UNIT_OPTIONS.map((u) => (
               <option key={u.id} value={u.id}>
@@ -79,7 +79,7 @@ export function ImportUnitModal({
           <select
             value={targetUnit}
             onChange={(e) => setTargetUnit(e.target.value as Units)}
-            className="w-full rounded border border-[#3c3c3c] bg-[#1e1e1e] px-3 py-2 text-xs text-white focus:border-[#007acc] focus:outline-none"
+            className="w-full rounded border border-[#3c3c3c] bg-[#1e1e1e] px-3 py-2 text-xs text-white focus:border-[#f4902c] focus:outline-none"
           >
             {UNIT_OPTIONS.map((u) => (
               <option key={u.id} value={u.id}>
@@ -90,7 +90,7 @@ export function ImportUnitModal({
         </div>
 
         {/* Conversion Scale Ratio Preview Box */}
-        <div className="rounded-lg border border-[#007acc]/40 bg-[#094771]/20 p-3 text-[11px] space-y-1">
+        <div className="rounded-lg border border-[#f4902c]/40 bg-[rgba(244,144,44,0.18)] p-3 text-[11px] space-y-1">
           <div className="flex justify-between font-mono font-semibold text-white">
             <span>Scale Ratio:</span>
             <span className="text-[#38bdf8]">
@@ -116,7 +116,7 @@ export function ImportUnitModal({
           <button
             type="button"
             onClick={() => onConfirm(sourceUnit, targetUnit)}
-            className="rounded bg-[#0e639c] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#1177bb] transition-colors shadow-sm"
+            className="rounded bg-[#f4902c] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#ffa552] transition-colors shadow-sm"
           >
             Convert & Open Drawing
           </button>

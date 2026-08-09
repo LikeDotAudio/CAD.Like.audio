@@ -17,7 +17,7 @@ export function LayerProperty() {
           store.setActiveLayer(targetLayer);
           if (selectionSize > 0) store.setSelectionLayer(targetLayer);
         }}
-        className="min-w-0 flex-1 rounded border border-[#3c3c3c] bg-[#2d2d2d] px-2 py-0.5 text-white focus:border-[#007acc] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        className="min-w-0 flex-1 rounded border border-[#3c3c3c] bg-[#2d2d2d] px-2 py-0.5 text-white focus:border-[#f4902c] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       >
         {layers.map((l) => (
           <option key={l.id} value={l.id}>
