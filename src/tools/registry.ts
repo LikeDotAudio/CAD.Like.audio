@@ -1,7 +1,11 @@
 import type { ToolId } from '../core/types';
 import { breakTool } from './breakTool';
+import { circle2pTool } from './circle2pTool';
+import { circle3pTool } from './circle3pTool';
 import { circleTool } from './circleTool';
 import { ellipseTool } from './ellipseTool';
+import { lineAngleTool } from './lineAngleTool';
+import { lineOrthogonalTool } from './lineOrthogonalTool';
 import { lineTool } from './lineTool';
 import { measureTool } from './measureTool';
 import { parallelTool } from './parallelTool';
@@ -10,6 +14,7 @@ import { rectTool } from './rectTool';
 import { rotateTool } from './rotateTool';
 import { selectTool } from './selectTool';
 import { splineTool } from './splineTool';
+import { tangentTool } from './tangentTool';
 import type { AnyTool } from './types';
 
 /** Toolbar order. */
@@ -17,11 +22,16 @@ export const TOOLS: AnyTool[] = [
   selectTool,
   lineTool,
   parallelTool,
+  lineAngleTool,
+  lineOrthogonalTool,
+  tangentTool,
   rotateTool,
   polylineTool,
   splineTool,
   rectTool,
   circleTool,
+  circle2pTool,
+  circle3pTool,
   ellipseTool,
   breakTool,
   measureTool,

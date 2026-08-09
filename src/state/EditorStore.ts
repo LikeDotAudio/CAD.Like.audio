@@ -1,5 +1,6 @@
 import type { Layer, Point, ToolId, Units, ValidationResult } from '../core/types';
 import { aciToHex } from '../core/dxfColors';
+import { parseMathExpression } from '../core/mathParser';
 import { calibrationFactor, idleCalibration, type CalibrationState } from '../image/calibration';
 import { isOverImage, type TracingImage } from '../image/TracingImage';
 import { saveDxf } from '../io/exportDxf';
@@ -869,8 +870,8 @@ export class EditorStore {
   private dynNumbers(): Record<string, number | null> {
     const out: Record<string, number | null> = {};
     for (const [key, raw] of Object.entries(this.dynValues)) {
-      const n = parseFloat(raw);
-      out[key] = Number.isFinite(n) ? n : null;
+      const n = parseMathExpression(raw);
+      out[key] = n;
     }
     return out;
   }

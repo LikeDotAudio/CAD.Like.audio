@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useStore, useUi } from '../state/useEditor';
 
-const NUMERIC_KEY = /^[0-9.\-]$/;
+const NUMERIC_KEY = /^[0-9.\-+\/*()]$/;
 
 /**
  * Type-to-size. Once a shape has a start point you can type its exact
