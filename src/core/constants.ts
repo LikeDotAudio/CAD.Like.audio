@@ -4,7 +4,7 @@ export const TAU = Math.PI * 2;
 export const EPS = 1e-5;
 
 /** Parametric tolerance used when rejecting intersections at segment ends. */
-export const PARAM_EPS = 1e-7;
+export const PARAM_EPS = 1e-4;
 
 /** Hit-test radius in screen pixels. */
 export const HIT_PX = 7;

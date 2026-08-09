@@ -346,7 +346,6 @@ export class Doc {
       for (const [eid, ss] of arcSplits) this.splitArcAt(eid, ss);
       if (!found) return;
     }
-    console.warn('resolveAllIntersections: hit the pass limit');
   }
 
   /** Rotate a set of edges by `angleRad` about pivot `(cx, cy)`. */
