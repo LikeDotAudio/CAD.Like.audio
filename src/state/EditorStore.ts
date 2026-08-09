@@ -6,6 +6,8 @@ import { isOverImage, type TracingImage } from '../image/TracingImage';
 import { saveDxf } from '../io/exportDxf';
 import { parseDxf, loadDxfIntoDoc } from '../io/importDxf';
 import { loadImageFile } from '../io/importImage';
+import { addRecentFile, type RecentFileEntry } from '../io/recentFiles';
+import { saveSessionToBrowser, loadSessionFromBrowser, type SavedSession } from '../io/browserStorage';
 import { Doc } from '../model/Doc';
 import { History } from '../model/history';
 import { convertGridSize, unitFactor } from '../model/units';
@@ -167,6 +169,7 @@ export class EditorStore {
       },
     };
     this.uiSnapshot = this.buildUi();
+    void this.restoreBrowserSession();
     this.showHint(
       'True arcs: circles stay curved when cut · B = Break tool · Shift = ortho · Snap to endpoints/midpoints',
       8000,
@@ -221,8 +224,77 @@ export class EditorStore {
 
   // --------------------------------------------------------------- validation
 
+  private autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
   private markDocChanged(): void {
     this.docVersion++;
+    if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
+    this.autoSaveTimer = setTimeout(() => {
+      void this.autoSaveSession();
+    }, 500);
+  }
+
+  private async autoSaveSession(): Promise<void> {
+    const session: SavedSession = {
+      version: 1,
+      timestamp: Date.now(),
+      docSnapshot: this.doc.snapshot(),
+      units: this.units,
+      gridSize: this.gridSize,
+      snapToGrid: this.snapToGrid,
+      shapeMode: this.shapeMode,
+      activeLayerId: this.activeLayerId,
+      layers: Array.from(this.layers.values()),
+      tracing: this.tracing
+        ? {
+            dataUrl: this.tracing.img.src,
+            x: this.tracing.x,
+            y: this.tracing.y,
+            worldWidth: this.tracing.worldWidth,
+            opacity: this.tracing.opacity,
+            visible: this.tracing.visible,
+          }
+        : null,
+    };
+    await saveSessionToBrowser(session);
+  }
+
+  private async restoreBrowserSession(): Promise<void> {
+    const session = await loadSessionFromBrowser();
+    if (!session || !session.docSnapshot || session.docSnapshot.edges.length === 0) return;
+
+    this.doc.restore(session.docSnapshot);
+    this.units = session.units || 'in';
+    this.gridSize = session.gridSize || 0.25;
+    this.snapToGrid = session.snapToGrid ?? true;
+    this.shapeMode = session.shapeMode ?? false;
+
+    if (session.layers && session.layers.length > 0) {
+      this.layers = new Map(session.layers.map((l) => [l.id, { ...l }]));
+      this.activeLayerId = session.activeLayerId || session.layers[0]!.id;
+    }
+
+    if (session.tracing && session.tracing.dataUrl) {
+      const img = new Image();
+      img.src = session.tracing.dataUrl;
+      await new Promise((res) => {
+        img.onload = res;
+      });
+      this.tracing = {
+        img,
+        x: session.tracing.x,
+        y: session.tracing.y,
+        worldWidth: session.tracing.worldWidth,
+        opacity: session.tracing.opacity,
+        visible: session.tracing.visible,
+      };
+    }
+
+    this.markDocChanged();
+    this.view.zoomToFit(this.doc.bounds());
+    this.requestDraw();
+    this.emit();
+    this.showHint('Restored previous session from browser memory.', 4000);
   }
 
   private validation(): ValidationResult {
@@ -795,11 +867,17 @@ export class EditorStore {
 
   async importDxf(file: File): Promise<void> {
     const text = await file.text();
+    await this.loadDxfText(text, file.name);
+  }
+
+  async loadDxfText(text: string, filename = 'drawing.dxf'): Promise<void> {
     const result = parseDxf(text);
     if (result.entities.length === 0) {
       window.alert('No supported geometry (LINE, CIRCLE, ARC, LWPOLYLINE) found in DXF file.');
       return;
     }
+
+    addRecentFile({ name: filename, type: 'dxf', data: text });
 
     this.history.push(this.doc.snapshot());
 
@@ -842,6 +920,22 @@ export class EditorStore {
       this.emit();
       this.showHint('Zoomed to fit drawing extent.', 2000);
     }
+  }
+
+  zoomIn(): void {
+    const cx = this.view.width ? this.view.width / 2 : 0;
+    const cy = this.view.height ? this.view.height / 2 : 0;
+    this.view.zoomAt(cx, cy, 1.3);
+    this.requestDraw();
+    this.emit();
+  }
+
+  zoomOut(): void {
+    const cx = this.view.width ? this.view.width / 2 : 0;
+    const cy = this.view.height ? this.view.height / 2 : 0;
+    this.view.zoomAt(cx, cy, 0.77);
+    this.requestDraw();
+    this.emit();
   }
 
   // ------------------------------------------------------------------- layers
@@ -922,6 +1016,26 @@ export class EditorStore {
 
   async importImage(file: File): Promise<void> {
     const img = await loadImageFile(file);
+    const dataUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    });
+
+    addRecentFile({ name: file.name, type: 'image', data: dataUrl });
+    this.applyLoadedImage(img);
+  }
+
+  async loadRecentImage(dataUrl: string): Promise<void> {
+    const img = new Image();
+    img.src = dataUrl;
+    await new Promise((resolve) => {
+      img.onload = resolve;
+    });
+    this.applyLoadedImage(img);
+  }
+
+  private applyLoadedImage(img: HTMLImageElement): void {
     this.tracing = {
       img,
       x: 0,
@@ -935,6 +1049,14 @@ export class EditorStore {
       'Image loaded — click two points on it whose real distance you know, then enter that distance.',
       0,
     );
+  }
+
+  async loadRecentFile(entry: RecentFileEntry): Promise<void> {
+    if (entry.type === 'dxf') {
+      await this.loadDxfText(entry.data, entry.name);
+    } else if (entry.type === 'image') {
+      await this.loadRecentImage(entry.data);
+    }
   }
 
   removeImage(): void {

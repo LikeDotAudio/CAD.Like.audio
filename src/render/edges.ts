@@ -37,13 +37,26 @@ export interface EdgeStyleState {
   layers?: ReadonlyMap<string, Layer>;
 }
 
+function isDarkColor(color?: string): boolean {
+  if (!color) return true;
+  const hex = color.toLowerCase().replace('#', '');
+  if (hex === '000000' || hex === '000' || hex === '1a1a1a' || hex === '1e293b' || hex === '15181b') return true;
+  if (hex.length === 6) {
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    if (r + g + b < 60) return true;
+  }
+  return false;
+}
+
 export function drawEdges(scene: Scene, state: EdgeStyleState): void {
   for (const e of scene.doc.edges.values()) {
     const layer = state.layers?.get(e.layerId ?? '0');
     // Hide edge if its assigned layer is hidden
     if (layer && !layer.visible) continue;
 
-    const baseColor = layer?.color || CANVAS.edge;
+    const baseColor = isDarkColor(layer?.color) ? CANVAS.edge : layer!.color;
 
     if (state.selected.has(e.id)) renderEdge(scene, e, CANVAS.edgeSelected, 2.8);
     else if (state.hoverEnabled && e.id === state.hoverId) renderEdge(scene, e, CANVAS.edgeHover, 2.2);

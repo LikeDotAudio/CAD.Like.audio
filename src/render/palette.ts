@@ -1,14 +1,14 @@
-/** Colours and fonts used on the canvas (the DOM chrome uses Tailwind tokens). */
+import COLORS from '../colorsStyle';
 
 export const CANVAS = {
-  background: '#1e1e1e',
-  grid: '#2d2d2d',
-  axis: '#454545',
+  background: COLORS.canvasBg,
+  grid: COLORS.canvasGrid,
+  axis: COLORS.canvasAxis,
 
-  edge: '#ffffff',
-  edgeSelected: '#38bdf8',
-  edgeHover: '#7dd3fc',
-  preview: '#f97316',
+  edge: COLORS.canvasEdgeDefault,
+  edgeSelected: COLORS.canvasEdgeSelected,
+  edgeHover: COLORS.canvasEdgeHover,
+  preview: COLORS.canvasPreview,
 
   dimLine: '#38bdf8',
   dimText: '#60a5fa',
@@ -17,10 +17,10 @@ export const CANVAS = {
   snapEndpoint: '#22c55e',
   snapEndpointFill: 'rgba(34,197,94,.25)',
   snapMidpoint: '#f59e0b',
-  snapMidpointFill: 'rgba(245,158,11,.25)',
+  snapMidpointFill: 'rgba(217,119,6,.15)',
   cursorDot: '#38bdf8',
 
-  danger: '#ef4444',
+  danger: COLORS.dangerRedText,
   dangerFill: 'rgba(239,68,68,.95)',
   warning: '#f59e0b',
   measure: '#22c55e',

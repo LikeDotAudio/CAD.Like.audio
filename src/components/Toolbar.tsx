@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useStore, useUi } from '../state/useEditor';
+import { getRecentFiles, clearRecentFiles, type RecentFileEntry } from '../io/recentFiles';
 
 export function Toolbar() {
   const store = useStore();
@@ -8,12 +9,22 @@ export function Toolbar() {
   const dxfFileRef = useRef<HTMLInputElement>(null);
 
   const [activeMenu, setActiveMenu] = useState<'file' | 'edit' | 'drawing' | null>(null);
+  const [recentFiles, setRecentFiles] = useState<RecentFileEntry[]>([]);
+  const [showRecentSubmenu, setShowRecentSubmenu] = useState(false);
+
+  // Sync recent files when File menu is toggled
+  useEffect(() => {
+    if (activeMenu === 'file') {
+      setRecentFiles(getRecentFiles());
+    }
+  }, [activeMenu]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (!(e.target as HTMLElement).closest('.menu-container')) {
         setActiveMenu(null);
+        setShowRecentSubmenu(false);
       }
     };
     window.addEventListener('mousedown', handleClickOutside);
@@ -63,6 +74,66 @@ export function Toolbar() {
                 >
                   <span>🖼️</span> Import Image...
                 </button>
+
+                <div className="my-1 border-t border-[#3c3c3c]" />
+
+                {/* Recent Files Submenu */}
+                <div
+                  className="relative"
+                  onMouseEnter={() => setShowRecentSubmenu(true)}
+                  onMouseLeave={() => setShowRecentSubmenu(false)}
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                  >
+                    <span className="flex items-center gap-2"><span>🕒</span> Recent Files</span>
+                    <span>▶</span>
+                  </button>
+
+                  {showRecentSubmenu && (
+                    <div className="absolute left-full top-0 ml-1 w-56 rounded border border-[#454545] bg-[#252526] p-1 shadow-2xl flex flex-col gap-0.5 max-h-64 overflow-y-auto">
+                      {recentFiles.length === 0 ? (
+                        <div className="px-3 py-2 text-[11px] text-[#777] italic">No recent files cached</div>
+                      ) : (
+                        <>
+                          {recentFiles.map((entry) => (
+                            <button
+                              key={entry.id}
+                              type="button"
+                              onClick={() => {
+                                setActiveMenu(null);
+                                setShowRecentSubmenu(false);
+                                void store.loadRecentFile(entry);
+                              }}
+                              className="flex items-center justify-between px-2.5 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[11px]"
+                            >
+                              <span className="truncate flex items-center gap-1.5 min-w-0">
+                                <span>{entry.type === 'dxf' ? '📂' : '🖼️'}</span>
+                                <span className="truncate">{entry.name}</span>
+                              </span>
+                              <span className="text-[9px] text-[#777] ml-2 flex-shrink-0">
+                                {new Date(entry.timestamp).toLocaleDateString()}
+                              </span>
+                            </button>
+                          ))}
+                          <div className="my-0.5 border-t border-[#3c3c3c]" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              clearRecentFiles();
+                              setRecentFiles([]);
+                            }}
+                            className="flex items-center gap-2 px-2.5 py-1 rounded text-left hover:bg-[#991b1b] hover:text-white text-[#f87171] transition-colors text-[10px]"
+                          >
+                            <span>🗑️</span> Clear Recent Files
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <div className="my-1 border-t border-[#3c3c3c]" />
                 <button
                   type="button"
