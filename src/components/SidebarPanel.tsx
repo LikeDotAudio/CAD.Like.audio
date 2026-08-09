@@ -102,16 +102,13 @@ export function SidebarPanel() {
                 onClick={() => store.setActiveLayer(layer.id)}
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1">
-                  {/* Active Indicator & Color Swatch */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowColorPicker(showColorPicker === layer.id ? null : layer.id);
-                    }}
-                    className="h-3 w-3 rounded-sm border border-[#555] flex-shrink-0"
-                    style={{ backgroundColor: layer.color }}
-                    title="Change layer color"
+                  {/* Active Indicator Dot */}
+                  <div
+                    className={
+                      'h-2 w-2 rounded-full flex-shrink-0 transition-transform ' +
+                      (isActive ? 'bg-[#007acc] scale-125' : 'bg-transparent border border-[#666]')
+                    }
+                    title={isActive ? 'Active Layer' : 'Click to set active'}
                   />
 
                   {/* Visibility Toggle */}
@@ -154,27 +151,41 @@ export function SidebarPanel() {
                   )}
                 </div>
 
-                {/* Color Swatch Popup */}
-                {showColorPicker === layer.id && (
-                  <div
-                    className="absolute left-10 mt-6 z-50 p-2 rounded border border-[#454545] bg-[#252526] shadow-2xl grid grid-cols-5 gap-1.5 w-36"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {STANDARD_DXF_COLORS.map((c) => (
-                      <button
-                        key={c.aci}
-                        type="button"
-                        onClick={() => {
-                          store.setLayerColor(layer.id, c.hex);
-                          setShowColorPicker(null);
-                        }}
-                        className="h-5 w-5 rounded border border-[#444] hover:scale-110 transition-transform"
-                        style={{ backgroundColor: c.hex }}
-                        title={`${c.name} (ACI ${c.aci})`}
-                      />
-                    ))}
-                  </div>
-                )}
+                {/* Far Right: Color Swatch */}
+                <div className="relative flex items-center flex-shrink-0 ml-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowColorPicker(showColorPicker === layer.id ? null : layer.id);
+                    }}
+                    className="h-3.5 w-3.5 rounded-sm border border-[#555] flex-shrink-0 hover:scale-110 transition-transform"
+                    style={{ backgroundColor: layer.color }}
+                    title={`Change color for layer ${layer.name}`}
+                  />
+
+                  {/* Color Swatch Popup */}
+                  {showColorPicker === layer.id && (
+                    <div
+                      className="absolute right-0 top-5 z-50 p-2 rounded border border-[#454545] bg-[#252526] shadow-2xl grid grid-cols-5 gap-1.5 w-36"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {STANDARD_DXF_COLORS.map((c) => (
+                        <button
+                          key={c.aci}
+                          type="button"
+                          onClick={() => {
+                            store.setLayerColor(layer.id, c.hex);
+                            setShowColorPicker(null);
+                          }}
+                          className="h-5 w-5 rounded border border-[#444] hover:scale-110 transition-transform"
+                          style={{ backgroundColor: c.hex }}
+                          title={`${c.name} (ACI ${c.aci})`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -227,12 +238,20 @@ export function SidebarPanel() {
             {/* Color Property */}
             <div className="flex items-center justify-between gap-2">
               <span className="text-[#888] w-20">Color:</span>
-              <div className="flex-1 flex items-center gap-2 bg-[#2d2d2d] border border-[#3c3c3c] rounded px-2 py-0.5">
-                <span
-                  className="h-3 w-3 rounded-sm border border-[#555]"
-                  style={{ backgroundColor: activeLayer?.color || '#fff' }}
-                />
+              <div className="flex-1 flex items-center justify-between gap-2 bg-[#2d2d2d] border border-[#3c3c3c] rounded px-2 py-0.5">
                 <span className="text-white truncate">By Layer ({activeLayer?.name})</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (activeLayer) {
+                      setShowColorPicker(showColorPicker === activeLayer.id ? null : activeLayer.id);
+                    }
+                  }}
+                  className="h-3.5 w-3.5 rounded-sm border border-[#555] flex-shrink-0 hover:scale-110 transition-transform cursor-pointer"
+                  style={{ backgroundColor: activeLayer?.color || '#fff' }}
+                  title={`Layer Color: ${activeLayer?.color}`}
+                />
               </div>
             </div>
 

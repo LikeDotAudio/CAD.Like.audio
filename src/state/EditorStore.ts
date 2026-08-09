@@ -48,6 +48,7 @@ export interface UiState {
   cursor: Point;
   edgeCount: number;
   validation: ValidationResult;
+  shapeMode: boolean;
   canExport: boolean;
   hint: { text: string; visible: boolean };
   measurement: string | null;
@@ -118,6 +119,7 @@ export class EditorStore {
 
   private docVersion = 0;
   private validationCache: { version: number; result: ValidationResult } | null = null;
+  private shapeMode = false;
 
   private frameHandle = 0;
   private listeners = new Set<() => void>();
@@ -186,7 +188,8 @@ export class EditorStore {
       cursor: this.pointer.world,
       edgeCount: this.doc.edgeCount,
       validation,
-      canExport: !this.doc.isEmpty && validation.valid,
+      shapeMode: this.shapeMode,
+      canExport: !this.doc.isEmpty && (!this.shapeMode || validation.valid),
       hint: { text: this.hintText, visible: this.hintVisible },
       measurement: this.measurement,
       tracing: this.tracing
@@ -248,6 +251,7 @@ export class EditorStore {
       tracing: this.tracing,
       calibration: this.calibration,
       validation: this.validation(),
+      shapeMode: this.shapeMode,
       layers: this.layers,
     });
   }
@@ -588,6 +592,18 @@ export class EditorStore {
     this.emit();
   }
 
+  setShapeMode(enabled: boolean): void {
+    this.shapeMode = enabled;
+    this.requestDraw();
+    this.emit();
+  }
+
+  toggleShapeMode(): void {
+    this.shapeMode = !this.shapeMode;
+    this.requestDraw();
+    this.emit();
+  }
+
   // ----------------------------------------------------------------- editing
 
   selectAll(): void {
@@ -624,12 +640,14 @@ export class EditorStore {
   }
 
   async exportDxf(): Promise<void> {
-    const result = this.validation();
-    if (!result.valid) {
-      window.alert(
-        `Cannot export yet:\n\n${result.errs.map((e) => `  • ${e}`).join('\n')}\n\nFix the highlighted issues and try again.`,
-      );
-      return;
+    if (this.shapeMode) {
+      const result = this.validation();
+      if (!result.valid) {
+        window.alert(
+          `Cannot export yet:\n\n${result.errs.map((e) => `  • ${e}`).join('\n')}\n\nFix the highlighted issues and try again.`,
+        );
+        return;
+      }
     }
     await saveDxf(this.doc, this.units);
   }

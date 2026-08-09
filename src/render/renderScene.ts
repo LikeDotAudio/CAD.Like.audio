@@ -20,6 +20,7 @@ export interface FrameState {
   tracing: TracingImage | null;
   calibration: CalibrationState;
   validation: ValidationResult;
+  shapeMode?: boolean;
   layers?: ReadonlyMap<string, Layer>;
 }
 
@@ -36,7 +37,10 @@ export function renderScene(scene: Scene, frame: FrameState): void {
     hoverEnabled: frame.tool.id === 'select',
     layers: frame.layers,
   });
-  drawBadVertexMarkers(scene);
+
+  if (frame.shapeMode) {
+    drawBadVertexMarkers(scene);
+  }
 
   if (!frame.calibration.active) {
     frame.tool.drawPreview?.(frame.toolState, scene);
@@ -44,5 +48,7 @@ export function renderScene(scene: Scene, frame: FrameState): void {
     if (showSnap) drawSnapIndicator(scene, frame.snap);
   }
 
-  drawErrorBanner(scene, frame.validation);
+  if (frame.shapeMode) {
+    drawErrorBanner(scene, frame.validation);
+  }
 }

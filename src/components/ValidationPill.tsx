@@ -6,7 +6,22 @@ const BASE =
 
 /** One-line summary of whether the drawing can be cut. */
 export function ValidationPill() {
-  const { edgeCount, validation } = useUi();
+  const { edgeCount, validation, shapeMode } = useUi();
+
+  if (!shapeMode) {
+    if (edgeCount === 0) {
+      return (
+        <span className={`${BASE} border-transparent bg-paper-2 text-ink-3`}>
+          · Draw to begin (SHPE Mode: OFF)
+        </span>
+      );
+    }
+    return (
+      <span className={`${BASE} border-ok-line bg-ok-bg text-ok-fg`}>
+        ✓ Ready (SHPE Mode: OFF)
+      </span>
+    );
+  }
 
   if (edgeCount === 0) {
     return (

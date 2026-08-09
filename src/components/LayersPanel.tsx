@@ -93,9 +93,10 @@ export function LayersPanel() {
                       onClick={() => store.setActiveLayer(layer.id)}
                       className={
                         'h-2.5 w-2.5 rounded-full flex-shrink-0 transition-transform ' +
-                        (isActive ? 'scale-125 ring-2 ring-accent/40' : 'opacity-40 hover:opacity-100')
+                        (isActive
+                          ? 'bg-accent scale-125 ring-2 ring-accent/40'
+                          : 'bg-transparent border border-rule-2 hover:border-ink')
                       }
-                      style={{ backgroundColor: layer.color }}
                       title={isActive ? 'Active drawing layer' : `Switch active layer to ${layer.name}`}
                     />
 
