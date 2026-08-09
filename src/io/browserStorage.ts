@@ -1,5 +1,5 @@
 import type { DocSnapshot } from '../model/Doc';
-import type { Layer, Units } from '../core/types';
+import type { Layer, Units, GridMode } from '../core/types';
 
 export interface SavedSession {
   version: number;
@@ -7,6 +7,7 @@ export interface SavedSession {
   docSnapshot: DocSnapshot;
   units: Units;
   gridSize: number;
+  gridMode?: GridMode;
   snapToGrid: boolean;
   shapeMode: boolean;
   activeLayerId: string;

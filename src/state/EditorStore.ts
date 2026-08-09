@@ -839,6 +839,20 @@ export class EditorStore {
     this.emit();
   }
 
+  clearAll(): void {
+    if (this.doc.isEmpty && !this.tool.isDrawing?.(this.toolState)) return;
+    this.history.push(this.doc.snapshot());
+    this.doc.clear();
+    this.selection.clear();
+    this.hoverId = null;
+    this.toolState = this.tool.createState();
+    this.closeDynInput();
+    this.markDocChanged();
+    this.requestDraw();
+    this.emit();
+    this.showHint('Cleared canvas.', 2000);
+  }
+
   rotateSelectionPrompt(): void {
     if (this.selection.size === 0) {
       this.showHint('Select elements to rotate first.', 3000);

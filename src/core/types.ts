@@ -1,6 +1,8 @@
 /** Shared domain types for the drawing board. */
 
 export type Units = 'in' | 'mm' | 'cm' | 'm' | 'ft';
+export type GridMode = 'lines' | 'dots';
+
 
 export interface Point {
   x: number;

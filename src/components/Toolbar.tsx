@@ -11,9 +11,9 @@ export function Toolbar() {
   const fileRef = useRef<HTMLInputElement>(null);
   const dxfFileRef = useRef<HTMLInputElement>(null);
 
-  const [activeMenu, setActiveMenu] = useState<'file' | 'edit' | 'modify' | 'drawing' | null>(
-    null,
-  );
+  const [activeMenu, setActiveMenu] = useState<
+    'file' | 'edit' | 'modify' | 'dimension' | 'drawing' | null
+  >(null);
   const [recentFiles, setRecentFiles] = useState<RecentFileEntry[]>([]);
   const [showRecentSubmenu, setShowRecentSubmenu] = useState(false);
   const [pendingDxfImport, setPendingDxfImport] = useState<{
@@ -396,6 +396,97 @@ export function Toolbar() {
                 >
                   <span className="flex items-center gap-2"><span>💥</span> Explode Groups</span>
                   <span className="text-[10px] font-mono text-[#888]">XP</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Dimension Menu (QCAD Dimension types) */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setActiveMenu(activeMenu === 'dimension' ? null : 'dimension')}
+              className={
+                'px-2.5 py-1 rounded text-[12px] font-medium transition-colors ' +
+                (activeMenu === 'dimension' ? 'bg-[#094771] text-white' : 'hover:bg-[#333] text-[#ddd]')
+              }
+            >
+              Dimension ▾
+            </button>
+            {activeMenu === 'dimension' && (
+              <div className="absolute left-0 top-7 z-50 w-56 rounded border border-[#454545] bg-[#252526] p-1 shadow-xl flex flex-col gap-0.5 max-h-96 overflow-y-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.setTool('measure');
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>📏</span> Aligned</span>
+                  <span className="text-[10px] font-mono text-[#888]">DA</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.setTool('measure');
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>↔️</span> Horizontal</span>
+                  <span className="text-[10px] font-mono text-[#888]">DH</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.setTool('measure');
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>↕️</span> Vertical</span>
+                  <span className="text-[10px] font-mono text-[#888]">DV</span>
+                </button>
+
+                <div className="my-0.5 border-t border-[#3c3c3c]" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.setTool('measure');
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>⭕</span> Radial</span>
+                  <span className="text-[10px] font-mono text-[#888]">DR</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.setTool('measure');
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>⌀</span> Diametric</span>
+                  <span className="text-[10px] font-mono text-[#888]">DD</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.setTool('measure');
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>📐</span> Angular</span>
+                  <span className="text-[10px] font-mono text-[#888]">DN</span>
                 </button>
               </div>
             )}

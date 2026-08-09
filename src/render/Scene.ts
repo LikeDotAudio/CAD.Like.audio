@@ -1,4 +1,4 @@
-import type { Point, Units } from '../core/types';
+import type { Point, Units, GridMode } from '../core/types';
 import type { Doc } from '../model/Doc';
 import type { Viewport } from '../viewport/Viewport';
 import { CANVAS } from './palette';
@@ -10,6 +10,7 @@ export interface Scene {
   doc: Doc;
   units: Units;
   gridSize: number;
+  gridMode?: GridMode;
   pointer: {
     /** Snapped world position (equal to `rawWorld` for non-snapping tools). */
     world: Point;
