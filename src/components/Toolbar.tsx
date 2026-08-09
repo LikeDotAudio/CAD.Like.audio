@@ -1,7 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { useStore, useUi } from '../state/useEditor';
-import { UnitToggle } from './UnitToggle';
-import { GridControls } from './GridControls';
 
 export function Toolbar() {
   const store = useStore();
@@ -99,7 +97,7 @@ export function Toolbar() {
               Edit ▾
             </button>
             {activeMenu === 'edit' && (
-              <div className="absolute left-0 top-7 z-50 w-44 rounded border border-[#454545] bg-[#252526] p-1 shadow-xl flex flex-col gap-0.5">
+              <div className="absolute left-0 top-7 z-50 w-52 rounded border border-[#454545] bg-[#252526] p-1 shadow-xl flex flex-col gap-0.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -111,6 +109,75 @@ export function Toolbar() {
                   <span className="flex items-center gap-2"><span>↩</span> Undo</span>
                   <span className="text-[10px] opacity-60">Ctrl+Z</span>
                 </button>
+                <div className="my-0.5 border-t border-[#3c3c3c]" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.cutSelection();
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>✂️</span> Cut</span>
+                  <span className="text-[10px] opacity-60">Ctrl+X</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.copySelection();
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>📋</span> Copy</span>
+                  <span className="text-[10px] opacity-60">Ctrl+C</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.pasteClipboard();
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>📌</span> Paste</span>
+                  <span className="text-[10px] opacity-60">Ctrl+V</span>
+                </button>
+                <div className="my-0.5 border-t border-[#3c3c3c]" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.selectAll();
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>🔳</span> Select All</span>
+                  <span className="text-[10px] opacity-60">Ctrl+A</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.deselectAll();
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>🔲</span> Deselect All</span>
+                  <span className="text-[10px] opacity-60">Esc</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.deleteSelection();
+                  }}
+                  className="flex items-center justify-between px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
+                >
+                  <span className="flex items-center gap-2"><span>🗑️</span> Delete Selected</span>
+                  <span className="text-[10px] opacity-60">Del</span>
+                </button>
+                <div className="my-0.5 border-t border-[#3c3c3c]" />
                 <button
                   type="button"
                   onClick={() => {
@@ -119,7 +186,7 @@ export function Toolbar() {
                   }}
                   className="flex items-center gap-2 px-3 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[12px]"
                 >
-                  <span>✕</span> Clear All
+                  <span>✕</span> Clear Canvas
                 </button>
               </div>
             )}
@@ -190,6 +257,18 @@ export function Toolbar() {
                   />
                 </label>
 
+                {/* Zoom to Fit */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveMenu(null);
+                    store.zoomToFit();
+                  }}
+                  className="flex items-center justify-between bg-[#1e1e1e] p-2 rounded border border-[#3c3c3c] text-[11px] font-semibold text-white hover:bg-[#094771] transition-colors"
+                >
+                  <span className="flex items-center gap-2">🔍 Zoom to Fit Extent</span>
+                </button>
+
                 <div className="border-t border-[#3c3c3c]" />
 
                 {/* Shape Mode Toggle */}
@@ -234,40 +313,6 @@ export function Toolbar() {
           if (file) void store.importImage(file);
         }}
       />
-
-      {/* Right section: Quick status bar / controls */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => store.toggleShapeMode()}
-          className={
-            'px-2 py-0.5 rounded text-[11px] font-mono font-medium tracking-wide transition-colors border ' +
-            (shapeMode
-              ? 'bg-[#007acc]/20 border-[#007acc] text-[#38bdf8]'
-              : 'bg-[#333]/40 border-[#555] text-[#aaa] hover:text-white')
-          }
-          title="Toggle Shape Validation Mode"
-        >
-          SHPE: {shapeMode ? 'ON' : 'OFF'}
-        </button>
-
-        <UnitToggle />
-        <GridControls />
-
-        <button
-          type="button"
-          disabled={!canExport}
-          onClick={() => void store.exportDxf()}
-          className={
-            'px-3 py-1 rounded text-[11px] font-semibold transition-colors flex items-center gap-1 ' +
-            (canExport
-              ? 'bg-[#0e639c] text-white hover:bg-[#1177bb]'
-              : 'bg-[#333] text-[#666] cursor-not-allowed')
-          }
-        >
-          ⬇ Download DXF
-        </button>
-      </div>
     </div>
   );
 }

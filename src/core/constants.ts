@@ -12,8 +12,8 @@ export const HIT_PX = 7;
 /** Snap search radius in screen pixels. */
 export const SNAP_PX = 10;
 
-export const MIN_ZOOM = 5;
-export const MAX_ZOOM = 5000;
+export const MIN_ZOOM = 0.0001;
+export const MAX_ZOOM = 500000;
 
 /** Screen-pixel radius for "clicked the first polyline point again". */
 export const CLOSE_LOOP_PX = 14;

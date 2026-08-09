@@ -97,6 +97,7 @@ export interface Tool<S extends object = object> {
 
   onPointerDown?(state: S, input: PointerInput, api: ToolApi): void;
   onPointerMove?(state: S, input: PointerInput, api: ToolApi): void;
+  onPointerUp?(state: S, input: PointerInput, api: ToolApi): void;
   onDoubleClick?(state: S, input: PointerInput, api: ToolApi): void;
   onEscape?(state: S, api: ToolApi): void;
   onDelete?(state: S, api: ToolApi): void;

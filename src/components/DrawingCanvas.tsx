@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useStore } from '../state/useEditor';
+import { ContextMenu } from './ContextMenu';
 import { DynInput } from './DynInput';
 import { Hint } from './Hint';
 import { ScaleBox } from './ScaleBox';
@@ -32,11 +33,12 @@ export function DrawingCanvas() {
   }, [store]);
 
   return (
-    <div ref={wrapRef} className="relative flex-1 overflow-hidden bg-white">
+    <div ref={wrapRef} className="relative flex-1 overflow-hidden bg-[#1e1e1e]">
       <canvas ref={canvasRef} className="absolute left-0 top-0" />
       <Hint />
       <ScaleBox />
       <DynInput />
+      <ContextMenu />
     </div>
   );
 }

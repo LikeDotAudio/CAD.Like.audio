@@ -24,6 +24,16 @@ export interface DynFieldUi {
   value: string;
 }
 
+export interface ClipboardItem {
+  type: 'line' | 'arc';
+  p1: Point;
+  p2: Point;
+  cx?: number;
+  cy?: number;
+  r?: number;
+  layerId?: string;
+}
+
 export interface DynUi {
   /** Client-space point the box is positioned near. */
   anchor: Point;
@@ -87,7 +97,7 @@ export class EditorStore {
   private snapToGrid = true;
 
   private layers: Map<string, Layer> = new Map([
-    ['0', { id: '0', name: '0', color: '#1a1a1a', dxfColorIndex: 7, visible: true }],
+    ['0', { id: '0', name: '0', color: '#ffffff', dxfColorIndex: 7, visible: true }],
   ]);
   private activeLayerId = '0';
 
@@ -120,6 +130,7 @@ export class EditorStore {
   private docVersion = 0;
   private validationCache: { version: number; result: ValidationResult } | null = null;
   private shapeMode = false;
+  private clipboard: ClipboardItem[] = [];
 
   private frameHandle = 0;
   private listeners = new Set<() => void>();
@@ -307,7 +318,7 @@ export class EditorStore {
 
     const onMove = (e: MouseEvent) => this.handlePointerMove(e);
     const onDown = (e: MouseEvent) => this.handlePointerDown(e);
-    const onUp = () => this.handlePointerUp();
+    const onUp = (e: MouseEvent) => this.handlePointerUp(e);
     const onDouble = (e: MouseEvent) => this.handleDoubleClick(e);
     const onWheel = (e: WheelEvent) => this.handleWheel(e);
     const onAux = (e: MouseEvent) => {
@@ -465,7 +476,7 @@ export class EditorStore {
     this.emit();
   }
 
-  private handlePointerUp(): void {
+  private handlePointerUp(e: MouseEvent): void {
     if (this.imageDrag) {
       this.imageDrag = null;
       this.emit();
@@ -474,6 +485,9 @@ export class EditorStore {
       this.panning = false;
       this.setCursor(this.tool.cursor);
     }
+    this.tool.onPointerUp?.(this.toolState, this.input(e), this.api);
+    this.requestDraw();
+    this.emit();
   }
 
   private handleDoubleClick(e: MouseEvent): void {
@@ -529,6 +543,15 @@ export class EditorStore {
       } else if (key === 'z') {
         e.preventDefault();
         this.undo();
+      } else if (key === 'c') {
+        e.preventDefault();
+        this.copySelection();
+      } else if (key === 'x') {
+        e.preventDefault();
+        this.cutSelection();
+      } else if (key === 'v') {
+        e.preventDefault();
+        this.pasteClipboard();
       }
       return;
     }
@@ -613,6 +636,124 @@ export class EditorStore {
     this.emit();
   }
 
+  deselectAll(): void {
+    this.selection.clear();
+    this.hoverId = null;
+    this.requestDraw();
+    this.emit();
+  }
+
+  copySelection(): void {
+    if (this.selection.size === 0) return;
+    const items: ClipboardItem[] = [];
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    for (const id of this.selection) {
+      const e = this.doc.edge(id);
+      if (!e) continue;
+      const [a, b] = this.doc.endpointsOf(e);
+      minX = Math.min(minX, a.x, b.x);
+      minY = Math.min(minY, a.y, b.y);
+      maxX = Math.max(maxX, a.x, b.x);
+      maxY = Math.max(maxY, a.y, b.y);
+    }
+
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+
+    for (const id of this.selection) {
+      const e = this.doc.edge(id);
+      if (!e) continue;
+      const [a, b] = this.doc.endpointsOf(e);
+      const item: ClipboardItem = {
+        type: e.type,
+        p1: { x: a.x - cx, y: a.y - cy },
+        p2: { x: b.x - cx, y: b.y - cy },
+        layerId: e.layerId,
+      };
+      if (e.type === 'arc') {
+        item.cx = e.cx - cx;
+        item.cy = e.cy - cy;
+        item.r = e.r;
+      }
+      items.push(item);
+    }
+
+    this.clipboard = items;
+    this.showHint(`Copied ${items.length} element(s) to clipboard.`, 3000);
+  }
+
+  cutSelection(): void {
+    if (this.selection.size === 0) return;
+    const count = this.selection.size;
+    this.copySelection();
+    this.history.push(this.doc.snapshot());
+    for (const id of this.selection) {
+      this.doc.removeEdge(id);
+    }
+    this.selection.clear();
+    this.hoverId = null;
+    this.markDocChanged();
+    this.requestDraw();
+    this.emit();
+    this.showHint(`Cut ${count} element(s).`, 3000);
+  }
+
+  pasteClipboard(): void {
+    if (this.clipboard.length === 0) return;
+    this.history.push(this.doc.snapshot());
+
+    const center = this.pointer.world || { x: 0, y: 0 };
+    const groupId = this.doc.newGroupId();
+    const newEdgeIds: number[] = [];
+
+    for (const item of this.clipboard) {
+      const p1x = center.x + item.p1.x;
+      const p1y = center.y + item.p1.y;
+      const p2x = center.x + item.p2.x;
+      const p2y = center.y + item.p2.y;
+
+      const v1 = this.doc.addVertex(p1x, p1y);
+      const v2 = this.doc.addVertex(p2x, p2y);
+
+      let edgeId: number | null = null;
+      if (item.type === 'line') {
+        edgeId = this.doc.addLineEdge(v1, v2, groupId, item.layerId || this.activeLayerId);
+      } else if (item.type === 'arc' && item.cx !== undefined && item.cy !== undefined && item.r !== undefined) {
+        const cx = center.x + item.cx;
+        const cy = center.y + item.cy;
+        edgeId = this.doc.addArcEdge(v1, v2, cx, cy, item.r, groupId, item.layerId || this.activeLayerId);
+      }
+      if (edgeId !== null) newEdgeIds.push(edgeId);
+    }
+
+    this.selection.clear();
+    for (const id of newEdgeIds) {
+      this.selection.add(id);
+    }
+
+    this.markDocChanged();
+    this.requestDraw();
+    this.emit();
+    this.showHint(`Pasted ${newEdgeIds.length} element(s).`, 3000);
+  }
+
+  deleteSelection(): void {
+    if (this.selection.size === 0) return;
+    const count = this.selection.size;
+    this.history.push(this.doc.snapshot());
+    for (const id of this.selection) {
+      this.doc.removeEdge(id);
+    }
+    this.selection.clear();
+    this.hoverId = null;
+    this.markDocChanged();
+    this.requestDraw();
+    this.emit();
+    this.showHint(`Deleted ${count} element(s).`, 3000);
+  }
+
   undo(): void {
     const snapshot = this.history.pop();
     if (!snapshot) return;
@@ -691,6 +832,16 @@ export class EditorStore {
     this.requestDraw();
     this.emit();
     this.showHint(`Opened DXF: imported ${result.entities.length} entities across ${this.layers.size} layers.`, 5000);
+  }
+
+  zoomToFit(): void {
+    const bounds = this.doc.bounds();
+    if (bounds) {
+      this.view.zoomToFit(bounds);
+      this.requestDraw();
+      this.emit();
+      this.showHint('Zoomed to fit drawing extent.', 2000);
+    }
   }
 
   // ------------------------------------------------------------------- layers

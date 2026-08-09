@@ -11,13 +11,13 @@ export function ValidationPill() {
   if (!shapeMode) {
     if (edgeCount === 0) {
       return (
-        <span className={`${BASE} border-transparent bg-paper-2 text-ink-3`}>
+        <span className={`${BASE} border-[#3c3c3c] bg-[#1e1e1e] text-[#888]`}>
           · Draw to begin (SHPE Mode: OFF)
         </span>
       );
     }
     return (
-      <span className={`${BASE} border-ok-line bg-ok-bg text-ok-fg`}>
+      <span className={`${BASE} border-[#166534]/50 bg-[#14532d]/30 text-[#4ade80]`}>
         ✓ Ready (SHPE Mode: OFF)
       </span>
     );
@@ -25,17 +25,17 @@ export function ValidationPill() {
 
   if (edgeCount === 0) {
     return (
-      <span className={`${BASE} border-transparent bg-paper-2 text-ink-3`}>· Draw to begin</span>
+      <span className={`${BASE} border-[#3c3c3c] bg-[#1e1e1e] text-[#888]`}>· Draw to begin</span>
     );
   }
   if (validation.valid) {
     return (
-      <span className={`${BASE} border-ok-line bg-ok-bg text-ok-fg`}>✓ Ready to cut</span>
+      <span className={`${BASE} border-[#166534]/50 bg-[#14532d]/30 text-[#4ade80]`}>✓ Ready to cut</span>
     );
   }
   return (
     <span
-      className={`${BASE} border-bad-line bg-bad-bg text-accent-ink`}
+      className={`${BASE} border-[#991b1b]/50 bg-[#7f1d1d]/30 text-[#f87171]`}
       title={validation.errs.join(' · ')}
     >
       ✕ {validation.errs[0]}

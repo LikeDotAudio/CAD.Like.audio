@@ -395,6 +395,53 @@ export class Doc {
     return true;
   }
 
+  /** Translate selected edges by (dx, dy). */
+  translateEdges(edgeIds: Iterable<number>, dx: number, dy: number): boolean {
+    const edgeSet = new Set(edgeIds);
+    if (edgeSet.size === 0 || (dx === 0 && dy === 0)) return false;
+
+    const affectedVertices = new Set<number>();
+    const affectedGroups = new Set<number>();
+
+    for (const id of edgeSet) {
+      const e = this.edges.get(id);
+      if (!e) continue;
+      affectedVertices.add(e.v1);
+      affectedVertices.add(e.v2);
+      if (e.groupId) {
+        affectedGroups.add(e.groupId);
+        this.groupIntact.delete(e.groupId);
+      }
+    }
+
+    for (const vId of affectedVertices) {
+      const v = this.vertices.get(vId);
+      if (v) {
+        v.x += dx;
+        v.y += dy;
+      }
+    }
+
+    for (const id of edgeSet) {
+      const e = this.edges.get(id);
+      if (e && e.type === 'arc') {
+        e.cx += dx;
+        e.cy += dy;
+      }
+    }
+
+    for (const gId of affectedGroups) {
+      const p = this.groupPrimitives.get(gId);
+      if (p) {
+        p.cx += dx;
+        p.cy += dy;
+      }
+    }
+
+    this.resolveAllIntersections();
+    return true;
+  }
+
   /** Multiply every coordinate by `f` (unit switches and scale calibration). */
   scaleAll(f: number): void {
     for (const v of this.vertices.values()) {
