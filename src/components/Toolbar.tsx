@@ -1,8 +1,6 @@
 import { useRef } from 'react';
 import { useStore, useUi } from '../state/useEditor';
-import { TOOLS } from '../tools/registry';
 import { GridControls } from './GridControls';
-import { ToolButton } from './ToolButton';
 import { UnitToggle } from './UnitToggle';
 import { BTN, SEPARATOR } from './styles';
 
@@ -16,7 +14,7 @@ const ImportIcon = (
 
 export function Toolbar() {
   const store = useStore();
-  const { toolId, canExport } = useUi();
+  const { canExport } = useUi();
   const fileRef = useRef<HTMLInputElement>(null);
   const dxfFileRef = useRef<HTMLInputElement>(null);
 
@@ -27,13 +25,6 @@ export function Toolbar() {
       </h1>
       <span className={SEPARATOR} />
 
-      <div className="flex gap-1">
-        {TOOLS.map((tool) => (
-          <ToolButton key={tool.id} tool={tool} active={tool.id === toolId} />
-        ))}
-      </div>
-
-      <span className={SEPARATOR} />
       <button
         type="button"
         className={BTN}
