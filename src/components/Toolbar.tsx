@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useStore, useUi } from '../state/useEditor';
 import { getRecentFiles, clearRecentFiles, type RecentFileEntry } from '../io/recentFiles';
+import { ImportUnitModal } from './ImportUnitModal';
+import { parseDxf } from '../io/importDxf';
+import type { Units } from '../core/types';
 
 export function Toolbar() {
   const store = useStore();
@@ -11,6 +14,11 @@ export function Toolbar() {
   const [activeMenu, setActiveMenu] = useState<'file' | 'edit' | 'drawing' | null>(null);
   const [recentFiles, setRecentFiles] = useState<RecentFileEntry[]>([]);
   const [showRecentSubmenu, setShowRecentSubmenu] = useState(false);
+  const [pendingDxfImport, setPendingDxfImport] = useState<{
+    text: string;
+    filename: string;
+    detectedUnit: Units;
+  } | null>(null);
 
   // Sync recent files when File menu is toggled
   useEffect(() => {
@@ -104,7 +112,16 @@ export function Toolbar() {
                               onClick={() => {
                                 setActiveMenu(null);
                                 setShowRecentSubmenu(false);
-                                void store.loadRecentFile(entry);
+                                if (entry.type === 'dxf') {
+                                  const parsed = parseDxf(entry.data);
+                                  setPendingDxfImport({
+                                    text: entry.data,
+                                    filename: entry.name,
+                                    detectedUnit: (parsed.units as Units) || 'mm',
+                                  });
+                                } else {
+                                  void store.loadRecentFile(entry);
+                                }
                               }}
                               className="flex items-center justify-between px-2.5 py-1.5 rounded text-left hover:bg-[#094771] hover:text-white transition-colors text-[11px]"
                             >
@@ -367,10 +384,18 @@ export function Toolbar() {
         type="file"
         accept=".dxf"
         hidden
-        onChange={(e) => {
+        onChange={async (e) => {
           const file = e.target.files?.[0];
           e.target.value = '';
-          if (file) void store.importDxf(file);
+          if (file) {
+            const text = await file.text();
+            const parsed = parseDxf(text);
+            setPendingDxfImport({
+              text,
+              filename: file.name,
+              detectedUnit: (parsed.units as Units) || 'mm',
+            });
+          }
         }}
       />
       <input
@@ -384,6 +409,24 @@ export function Toolbar() {
           if (file) void store.importImage(file);
         }}
       />
+
+      {/* Unit Conversion Modal */}
+      {pendingDxfImport && (
+        <ImportUnitModal
+          filename={pendingDxfImport.filename}
+          detectedUnit={pendingDxfImport.detectedUnit}
+          onConfirm={(sourceUnit, targetUnit) => {
+            void store.loadDxfText(
+              pendingDxfImport.text,
+              pendingDxfImport.filename,
+              sourceUnit,
+              targetUnit,
+            );
+            setPendingDxfImport(null);
+          }}
+          onCancel={() => setPendingDxfImport(null)}
+        />
+      )}
     </div>
   );
 }

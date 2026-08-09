@@ -870,7 +870,12 @@ export class EditorStore {
     await this.loadDxfText(text, file.name);
   }
 
-  async loadDxfText(text: string, filename = 'drawing.dxf'): Promise<void> {
+  async loadDxfText(
+    text: string,
+    filename = 'drawing.dxf',
+    sourceUnit?: Units,
+    targetUnit?: Units,
+  ): Promise<void> {
     const result = parseDxf(text);
     if (result.entities.length === 0) {
       window.alert('No supported geometry (LINE, CIRCLE, ARC, LWPOLYLINE) found in DXF file.');
@@ -881,8 +886,44 @@ export class EditorStore {
 
     this.history.push(this.doc.snapshot());
 
-    if (result.units && result.units !== this.units) {
-      this.setUnits(result.units);
+    const fromUnit = sourceUnit || result.units || 'mm';
+    const toUnit = targetUnit || this.units;
+    const factor = unitFactor(fromUnit, toUnit);
+
+    if (toUnit !== this.units) {
+      this.setUnits(toUnit);
+    }
+
+    // Scale geometry entities if source unit != base workspace unit
+    if (factor !== 1) {
+      for (const ent of result.entities) {
+        if (
+          ent.type === 'line' &&
+          ent.x1 !== undefined &&
+          ent.y1 !== undefined &&
+          ent.x2 !== undefined &&
+          ent.y2 !== undefined
+        ) {
+          ent.x1 *= factor;
+          ent.y1 *= factor;
+          ent.x2 *= factor;
+          ent.y2 *= factor;
+        } else if (
+          (ent.type === 'circle' || ent.type === 'arc') &&
+          ent.cx !== undefined &&
+          ent.cy !== undefined &&
+          ent.r !== undefined
+        ) {
+          ent.cx *= factor;
+          ent.cy *= factor;
+          ent.r *= factor;
+        } else if (ent.type === 'polyline' && ent.points) {
+          for (const pt of ent.points) {
+            pt.x *= factor;
+            pt.y *= factor;
+          }
+        }
+      }
     }
 
     // Populate DXF layers into layer store
@@ -966,6 +1007,101 @@ export class EditorStore {
     const layer = this.layers.get(id);
     if (!layer) return;
     layer.visible = !layer.visible;
+    this.requestDraw();
+    this.emit();
+  }
+
+  toggleLayerLock(id: string): void {
+    const layer = this.layers.get(id);
+    if (!layer) return;
+    layer.locked = !layer.locked;
+    this.requestDraw();
+    this.emit();
+  }
+
+  showOnlyActiveLayer(): void {
+    for (const layer of this.layers.values()) {
+      layer.visible = layer.id === this.activeLayerId;
+    }
+    this.requestDraw();
+    this.emit();
+  }
+
+  showAllLayers(): void {
+    for (const layer of this.layers.values()) {
+      layer.visible = true;
+    }
+    this.requestDraw();
+    this.emit();
+  }
+
+  hideAllLayers(): void {
+    for (const layer of this.layers.values()) {
+      if (layer.id !== this.activeLayerId) {
+        layer.visible = false;
+      }
+    }
+    this.requestDraw();
+    this.emit();
+  }
+
+  lockAllLayers(): void {
+    for (const layer of this.layers.values()) {
+      layer.locked = true;
+    }
+    this.requestDraw();
+    this.emit();
+  }
+
+  unlockAllLayers(): void {
+    for (const layer of this.layers.values()) {
+      layer.locked = false;
+    }
+    this.requestDraw();
+    this.emit();
+  }
+
+  deleteLayer(id: string): void {
+    if (this.layers.size <= 1 || !this.layers.has(id)) return;
+
+    this.history.push(this.doc.snapshot());
+    this.layers.delete(id);
+
+    const fallbackLayerId = Array.from(this.layers.keys())[0] || '0';
+    if (this.activeLayerId === id) {
+      this.activeLayerId = fallbackLayerId;
+    }
+
+    for (const e of this.doc.edges.values()) {
+      if (e.layerId === id) {
+        e.layerId = fallbackLayerId;
+      }
+    }
+
+    this.markDocChanged();
+    this.requestDraw();
+    this.emit();
+    this.showHint(`Deleted layer "${id}".`, 3000);
+  }
+
+  selectLayerEntities(id: string): void {
+    this.selection.clear();
+    for (const e of this.doc.edges.values()) {
+      if (e.layerId === id) {
+        this.selection.add(e.id);
+      }
+    }
+    this.requestDraw();
+    this.emit();
+    this.showHint(`Selected ${this.selection.size} entity(ies) on layer "${id}".`, 3000);
+  }
+
+  deselectLayerEntities(id: string): void {
+    for (const e of this.doc.edges.values()) {
+      if (e.layerId === id) {
+        this.selection.delete(e.id);
+      }
+    }
     this.requestDraw();
     this.emit();
   }

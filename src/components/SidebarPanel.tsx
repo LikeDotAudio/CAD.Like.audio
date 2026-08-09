@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useStore, useUi } from '../state/useEditor';
 import { STANDARD_DXF_COLORS } from '../core/dxfColors';
+import { LayerContextMenu } from './LayerContextMenu';
+import type { Layer } from '../core/types';
 
 export function SidebarPanel() {
   const store = useStore();
@@ -9,6 +11,9 @@ export function SidebarPanel() {
   const [showColorPicker, setShowColorPicker] = useState<string | null>(null);
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; layer: Layer } | null>(
+    null,
+  );
 
   const handleAddLayer = (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,6 +105,10 @@ export function SidebarPanel() {
                   (isActive ? 'bg-[#094771] text-white' : 'hover:bg-[#2a2d2e] text-[#cccccc]')
                 }
                 onClick={() => store.setActiveLayer(layer.id)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setContextMenu({ x: e.clientX, y: e.clientY, layer });
+                }}
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   {/* Active Indicator Dot */}
@@ -311,6 +320,26 @@ export function SidebarPanel() {
           </div>
         </div>
       </div>
+
+      {/* Layer Right-Click Context Menu */}
+      {contextMenu && (
+        <LayerContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          targetLayer={contextMenu.layer}
+          onClose={() => setContextMenu(null)}
+          onEditLayer={(layer) => {
+            setEditingLayerId(layer.id);
+            setEditingName(layer.name);
+          }}
+          onAddLayerPrompt={() => {
+            const name = window.prompt('Enter new layer name:');
+            if (name && name.trim()) {
+              store.addLayer(name.trim());
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

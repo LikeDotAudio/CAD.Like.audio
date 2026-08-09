@@ -1,6 +1,6 @@
 /** Shared domain types for the drawing board. */
 
-export type Units = 'in' | 'mm';
+export type Units = 'in' | 'mm' | 'cm' | 'm' | 'ft';
 
 export interface Point {
   x: number;
@@ -24,6 +24,7 @@ export interface Layer {
   color: string; // Hex color e.g. '#3b82f6'
   dxfColorIndex?: number; // AutoCAD Color Index (ACI 1-255)
   visible: boolean;
+  locked?: boolean;
 }
 
 interface EdgeBase {
