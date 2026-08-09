@@ -13,7 +13,7 @@ export function ColorProperty() {
     <PropertyRow label="Color:">
       <div
         className={
-          'flex flex-1 items-center justify-between gap-2 rounded border border-[#3c3c3c] bg-[#2d2d2d] px-2 py-0.5 ' +
+          'flex min-w-0 flex-1 items-center justify-between gap-2 rounded border border-[#3c3c3c] bg-[#2d2d2d] px-2 py-0.5 ' +
           (selectionProtected ? 'opacity-50' : '')
         }
       >

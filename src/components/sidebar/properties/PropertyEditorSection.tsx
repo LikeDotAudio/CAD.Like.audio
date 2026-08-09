@@ -12,7 +12,7 @@ export function PropertyEditorSection() {
     <div className="flex min-h-0 flex-1 flex-col bg-[#252526]">
       <PanelSectionTitle label="Property Editor" />
 
-      <div className="flex-1 space-y-3 overflow-y-auto p-3 text-[11px]">
+      <div className="flex-1 space-y-3 overflow-y-auto overflow-x-hidden p-3 text-[11px]">
         <SelectionSummary />
 
         <div className="space-y-2 rounded border border-[#333] bg-[#1e1e1e] p-2.5">

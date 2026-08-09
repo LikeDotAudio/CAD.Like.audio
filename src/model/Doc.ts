@@ -20,6 +20,7 @@ import { flipHorizontal } from './doc/flipHorizontal';
 import { flipVertical } from './doc/flipVertical';
 import { groupSelected } from './doc/groupSelected';
 import { hitEdgeAt } from './doc/hitEdgeAt';
+import { moveVertex } from './doc/moveVertex';
 import { removeEdge } from './doc/removeEdge';
 import { resolveAllIntersections } from './doc/resolveAllIntersections';
 import { restoreDoc } from './doc/restoreDoc';
@@ -106,6 +107,10 @@ export class Doc {
 
   vertexDegree(vId: number): number {
     return vertexDegree(this, vId);
+  }
+
+  moveVertex(vId: number, x: number, y: number): boolean {
+    return moveVertex(this, vId, x, y);
   }
 
   // ------------------------------------------------------------------- edges

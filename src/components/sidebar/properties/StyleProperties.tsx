@@ -5,7 +5,7 @@ import { PropertyRow } from './PropertyRow';
 export function StyleProperties() {
   const { selectionProtected } = useUi();
   const selectClass =
-    'flex-1 rounded border border-[#3c3c3c] bg-[#2d2d2d] px-2 py-0.5 text-[#aaa] disabled:cursor-not-allowed disabled:opacity-50';
+    'min-w-0 flex-1 rounded border border-[#3c3c3c] bg-[#2d2d2d] px-2 py-0.5 text-[#aaa] disabled:cursor-not-allowed disabled:opacity-50';
 
   return (
     <>
@@ -31,7 +31,7 @@ export function StyleProperties() {
           type="text"
           readOnly
           value="1.0"
-          className="flex-1 rounded border border-[#3c3c3c] bg-[#252526] px-2 py-0.5 text-[#777]"
+          className="min-w-0 flex-1 rounded border border-[#3c3c3c] bg-[#252526] px-2 py-0.5 text-[#777]"
         />
       </PropertyRow>
     </>

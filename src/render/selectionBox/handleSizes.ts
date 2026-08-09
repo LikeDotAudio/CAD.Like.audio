@@ -1,3 +1,9 @@
+/** Drawn size of an endpoint / midpoint grip, in pixels. */
+export const HANDLE_PX = 7;
+
+/** Click tolerance around a grip, in pixels. Larger than the drawn square so grips are easy to catch. */
+export const HANDLE_HIT_PX = 7;
+
 /** Gap in pixels between the selected geometry and the selection net. */
 export const SELECTION_PAD_PX = 8;
 

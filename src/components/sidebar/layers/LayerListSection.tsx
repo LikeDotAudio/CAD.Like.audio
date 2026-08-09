@@ -46,7 +46,7 @@ export function LayerListSection() {
       <LayerVisibilityActions />
       <AddLayerForm />
 
-      <div className="flex-1 space-y-0.5 overflow-y-auto p-1">
+      <div className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden p-1">
         {layers.map((layer) => (
           <LayerRow
             key={layer.id}

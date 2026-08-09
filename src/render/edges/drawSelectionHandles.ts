@@ -1,7 +1,6 @@
 import type { Point } from '../../core/types';
 import { CANVAS } from '../palette';
-
-const HANDLE_PX = 7;
+import { HANDLE_PX } from '../selectionBox/handleSizes';
 
 /** Orange squares on every endpoint and midpoint of the selection. */
 export function drawSelectionHandles(ctx: CanvasRenderingContext2D, points: Point[]): void {

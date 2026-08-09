@@ -5,9 +5,10 @@ import { CANVAS } from '../render/palette';
 import { cornerCursor } from '../render/selectionBox/cornerCursor';
 import { hitCorner } from '../render/selectionBox/hitCorner';
 import { oppositeCorner } from '../render/selectionBox/oppositeCorner';
-import { paddedBounds } from '../render/selectionBox/paddedBounds';
+import { hitEndpointGrip } from './select/hitEndpointGrip';
+import { hitMidpointGrip } from './select/hitMidpointGrip';
+import { netBounds } from './select/netBounds';
 import type { Point } from '../core/types';
-import type { ToolApi } from './types';
 import type { Tool } from './types';
 
 interface ScaleDrag {
@@ -20,6 +21,20 @@ interface ScaleDrag {
   snapshot: boolean;
 }
 
+/** Dragging one endpoint grip: the vertex follows the cursor, the rest stays put. */
+interface VertexDrag {
+  vertexId: number;
+  snapshot: boolean;
+  moved: boolean;
+}
+
+/** Dragging a midpoint grip: that one edge follows the cursor. */
+interface EdgeDrag {
+  edgeId: number;
+  lastWorld: Point;
+  snapshot: boolean;
+}
+
 interface SelectState {
   dragStartWorld: Point | null;
   boxStartScreen: Point | null;
@@ -27,13 +42,8 @@ interface SelectState {
   isMoving: boolean;
   movedSnapshot: boolean;
   scaling: ScaleDrag | null;
-}
-
-/** Padded selection net bounds, or null when fewer than two elements are selected. */
-function netBounds(api: ToolApi) {
-  if (api.selection.size < 2) return null;
-  const b = api.doc.boundsOf(api.selection);
-  return b ? paddedBounds(api.view, b) : null;
+  vertexDrag: VertexDrag | null;
+  edgeDrag: EdgeDrag | null;
 }
 
 const Icon = (
@@ -47,8 +57,8 @@ export const selectTool: Tool<SelectState> = {
   label: 'Select',
   shortcut: 's',
   title:
-    'Select (S) — Click edge to select, drag to move selection, drag a corner handle to scale, or drag box select. Ctrl+C (Copy), Ctrl+Shift+C (Copy from reference point), Ctrl+X (Cut), Ctrl+V (Paste), Delete.',
-  hint: 'Click edge to select · Drag to move · Drag corner handle to scale · Ctrl+Shift+C copies from a reference point',
+    'Select (S) — Click edge to select, drag an orange grip to reshape, drag to move, drag a corner handle to scale, or drag box select. Ctrl+C (Copy), Ctrl+Shift+C (Copy from reference point), Ctrl+X (Cut), Ctrl+V (Paste), Delete.',
+  hint: 'Drag an orange endpoint grip to move it · Midpoint grip moves the segment · Corner handle scales · Ctrl+Shift+C copies from a reference point',
   icon: Icon,
   cursor: 'default',
   snaps: false,
@@ -60,9 +70,38 @@ export const selectTool: Tool<SelectState> = {
     isMoving: false,
     movedSnapshot: false,
     scaling: null,
+    vertexDrag: null,
+    edgeDrag: null,
   }),
 
   onPointerMove(state, input, api) {
+    if (state.vertexDrag) {
+      if (!state.vertexDrag.snapshot) {
+        api.edit(() => true);
+        state.vertexDrag.snapshot = true;
+      }
+      if (api.doc.moveVertex(state.vertexDrag.vertexId, input.rawWorld.x, input.rawWorld.y)) {
+        state.vertexDrag.moved = true;
+        api.redraw();
+      }
+      return;
+    }
+
+    if (state.edgeDrag) {
+      const dx = input.rawWorld.x - state.edgeDrag.lastWorld.x;
+      const dy = input.rawWorld.y - state.edgeDrag.lastWorld.y;
+      if (dx !== 0 || dy !== 0) {
+        if (!state.edgeDrag.snapshot) {
+          api.edit(() => true);
+          state.edgeDrag.snapshot = true;
+        }
+        api.doc.translateEdges([state.edgeDrag.edgeId], dx, dy);
+        state.edgeDrag.lastWorld = input.rawWorld;
+        api.redraw();
+      }
+      return;
+    }
+
     if (state.scaling) {
       const { anchor, startDist } = state.scaling;
       const dist = Math.hypot(input.rawWorld.x - anchor.x, input.rawWorld.y - anchor.y);
@@ -113,6 +152,13 @@ export const selectTool: Tool<SelectState> = {
       return;
     }
 
+    // Grips take priority over the edge under them, so they stay catchable.
+    if (hitEndpointGrip(api, input.screen) !== null || hitMidpointGrip(api, input.screen) !== null) {
+      api.setHoverEdge(null);
+      api.setCursor('move');
+      return;
+    }
+
     const hit = api.doc.hitEdgeAt(input.rawWorld.x, input.rawWorld.y, api.view.zoom);
     api.setHoverEdge(hit);
     api.setCursor(hit !== null ? 'pointer' : 'default');
@@ -131,6 +177,24 @@ export const selectTool: Tool<SelectState> = {
         api.redraw();
         return;
       }
+    }
+
+    // Endpoint grip: drag that vertex anywhere. Everything joined to it follows.
+    const vertexId = hitEndpointGrip(api, input.screen);
+    if (vertexId !== null) {
+      state.vertexDrag = { vertexId, snapshot: false, moved: false };
+      api.setCursor('move');
+      api.redraw();
+      return;
+    }
+
+    // Midpoint grip: drag the whole segment.
+    const midEdgeId = hitMidpointGrip(api, input.screen);
+    if (midEdgeId !== null) {
+      state.edgeDrag = { edgeId: midEdgeId, lastWorld: input.rawWorld, snapshot: false };
+      api.setCursor('move');
+      api.redraw();
+      return;
     }
 
     const hit = api.doc.hitEdgeAt(input.rawWorld.x, input.rawWorld.y, api.view.zoom);
@@ -163,6 +227,23 @@ export const selectTool: Tool<SelectState> = {
   },
 
   onPointerUp(state, _input, api) {
+    if (state.vertexDrag) {
+      // Re-planarise once, at the end: doing it per mouse move would split the
+      // very edges being dragged and swap their ids mid-drag.
+      if (state.vertexDrag.moved) api.doc.resolveAllIntersections();
+      state.vertexDrag = null;
+      api.setCursor('default');
+      api.redraw();
+      return;
+    }
+
+    if (state.edgeDrag) {
+      state.edgeDrag = null;
+      api.setCursor('default');
+      api.redraw();
+      return;
+    }
+
     if (state.scaling) {
       state.scaling = null;
       api.setMeasurement(null);
@@ -205,6 +286,8 @@ export const selectTool: Tool<SelectState> = {
     state.boxStartScreen = null;
     state.boxEndScreen = null;
     state.scaling = null;
+    state.vertexDrag = null;
+    state.edgeDrag = null;
     api.setMeasurement(null);
     api.selection.clear();
     api.redraw();
